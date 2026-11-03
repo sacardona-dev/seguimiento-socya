@@ -1,0 +1,93 @@
+/* Tokens de diseño: colores, tipografía, espacios.
+   Paleta oficial de Socya (manual de marca). No inventes colores fuera de esta lista:
+   si necesitas uno nuevo, agrégalo aquí con su nombre y úsalo por variable. */
+
+@font-face {
+  font-family: "Laca";
+  src: url("../assets/fuentes/laca-bold.otf") format("opentype");
+  font-weight: 700;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light dark;
+
+  /* Paleta institucional */
+  --socya-lima: #80C612;
+  --socya-verde: #087062;
+  --socya-noche: #123C49;
+  --socya-cielo: #00A0DF;
+  --socya-naranja: #FF8300;
+  --socya-gris: #595959;
+  --socya-gris-claro: #B0B0B0;
+  --socya-fondo: #F7F9F4;
+  --socya-lima-suave: #DCEBD3;
+  --socya-naranja-texto: #B35400;
+  --socya-cielo-texto: #0077A8;
+  --socya-rojo: #C00000;
+
+  /* Roles de color de la app (usa estos en los componentes, no la paleta directa) */
+  --color-fondo: var(--socya-fondo);
+  --color-superficie: #FFFFFF;
+  --color-texto: var(--socya-noche);
+  --color-texto-suave: var(--socya-gris);
+  --color-borde: var(--socya-lima-suave);
+  --color-borde-control: var(--socya-gris-claro);
+  --color-primario: var(--socya-verde);
+  --color-primario-texto: #FFFFFF;
+  --color-primario-hover: var(--socya-noche);
+  --color-resalte: var(--socya-lima-suave);
+  --color-enlace: var(--socya-verde);
+  --color-foco: var(--socya-cielo);
+  --color-exito: var(--socya-verde);
+  --color-exito-fondo: var(--socya-lima-suave);
+  --color-alerta: var(--socya-naranja-texto);
+  --color-alerta-fondo: #FFF0E0;
+  --color-error: var(--socya-rojo);
+  --color-error-fondo: #FBE9E9;
+
+  /* Tipografía */
+  --fuente-titulo: "Laca", "Futura", "Century Gothic", "Avenir Next", sans-serif;
+  --fuente-texto: "Century Gothic", "CenturyGothic", "AppleGothic", "Futura", "Avenir", sans-serif;
+  --tamano-texto: 15px;
+  --tamano-pequeno: 13px;
+
+  /* Espacios (múltiplos de 4) */
+  --esp-1: 4px;
+  --esp-2: 8px;
+  --esp-3: 12px;
+  --esp-4: 16px;
+  --esp-5: 24px;
+  --esp-6: 32px;
+
+  /* Forma */
+  --radio: 16px;
+  --radio-control: 10px;
+  --sombra: 0 4px 16px rgba(18, 60, 73, .08);
+
+  /* Tamaño mínimo de lo que se toca o se hace clic (ley de Fitts) */
+  --alto-toque: 44px;
+}
+
+/* Modo oscuro según el manual: fondo noche, verde de lectura lima, enlaces cielo */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-fondo: var(--socya-noche);
+    --color-superficie: #0E2F39;
+    --color-texto: #FFFFFF;
+    --color-texto-suave: #C9D6DA;
+    --color-borde: #24505E;
+    --color-borde-control: #3B6573;
+    --color-primario: var(--socya-lima);
+    --color-primario-texto: var(--socya-noche);
+    --color-primario-hover: var(--socya-lima-suave);
+    --color-resalte: #184654;
+    --color-enlace: var(--socya-cielo);
+    --color-exito: var(--socya-lima);
+    --color-exito-fondo: #1E4A2A;
+    --color-alerta: #FFB366;
+    --color-alerta-fondo: #4A2A0A;
+    --color-error: #FF8A8A;
+    --color-error-fondo: #4A1515;
+  }
+}
