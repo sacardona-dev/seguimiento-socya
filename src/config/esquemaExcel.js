@@ -19,39 +19,108 @@ export const DATOS = [
   ['E', 'Tipo (J.A.C., asociación, otra)'],
 ];
 
-// Secciones en el mismo orden y con los mismos nombres que los grupos del Excel
+// Secciones en el mismo orden y con los mismos nombres que los grupos del Excel.
+// Cada sección tiene subgrupos (ej. "1. Talleres…", "2. Comité técnico…") como en el encabezado del Excel.
+// Campo: [columna, etiqueta, ayuda opcional]. Grupo sin nombre (null) = la sección no tiene subgrupos.
+const seccion = (id, nombre, grupos) => ({
+  id, nombre, grupos,
+  campos: grupos.flatMap(g => g.campos), // lista plana, para contar avance y exportar
+});
+const grupo = (nombre, campos) => ({ nombre, campos });
+
 export const SECCIONES = [
-  { id: 'A', nombre: 'A. Escuela de desarrollo comunitario', campos: [
-    ['F', '¿Se realizó Escuela en el periodo?'], ['G', '¿Cuál módulo?'],
-  ]},
-  { id: 'GP', nombre: 'Generalidades del proyecto', campos: [
-    ['H', 'Nombre del proyecto'], ['I', 'Línea de inversión'], ['J', 'Duración del proyecto (meses)'],
-  ]},
-  { id: 'B', nombre: 'B. Formulación y evaluación de proyectos', campos: [
-    ['K', 'Fecha taller'], ['L', 'Participantes taller'], ['M', 'Temáticas taller'],
-    ['N', 'Fecha comité técnico'], ['O', 'No participantes comité'], ['P', 'Instituciones y acuerdos comité'],
-    ['Q', 'Fecha capacitación'], ['R', 'Participantes capacitación'], ['S', 'Resumen avances formulación'],
-  ]},
-  { id: 'C', nombre: 'C. Seguimiento a la ejecución de proyectos', campos: [
-    ['T', 'Fecha taller'], ['U', 'Participantes taller'], ['V', 'Temáticas taller'],
-    ['W', 'Fecha comité técnico'], ['X', 'No participantes comité'], ['Y', 'Instituciones y acuerdos comité'],
-    ['Z', 'Fecha capacitación'], ['AA', 'Participantes capacitación'], ['AB', 'Resumen avances ejecución'],
-  ]},
-  { id: 'D', nombre: 'D. Acompañamiento a fondos rotatorios', campos: [
-    ['AC', 'Tipo de asesoría'], ['AD', 'Fecha'], ['AE', 'No de participantes'], ['AF', 'Avances y compromisos'],
-  ]},
-  { id: 'E', nombre: 'E. Acompañamiento y seguimiento a organizaciones comunitarias', campos: [
-    ['AG', 'Resultado ICO I'], ['AH', 'Resultado ICO II'], ['AI', 'Resultado ICO III'],
-    ['AJ', 'Socialización: fecha'], ['AK', 'Socialización: participantes'], ['AL', 'Socialización: medio'],
-    ['AM', 'Planes de fortalecimiento: fecha'], ['AN', 'Planes de fortalecimiento: participantes'], ['AO', 'Planes de fortalecimiento: medio'],
-    ['AP', 'Tipo de asesoría'], ['AQ', 'Fecha'], ['AR', 'No de participantes'], ['AS', 'Medio utilizado'],
-  ]},
-  { id: 'F', nombre: 'F. Participación en espacios de relacionamiento con las comunidades', campos: [
-    ['AT', 'Participación en espacios de relacionamiento con las comunidades en las áreas'],
-  ]},
-  { id: 'OBS', nombre: 'Observaciones', campos: [
-    ['AU', 'Aspectos generales del funcionamiento de la organización y su avance en otras actividades del acompañamiento social'],
-  ]},
+  seccion('A', 'A. Escuela de desarrollo comunitario', [
+    grupo('1. Participación en Escuela', [
+      ['F', '¿Se realizó Escuela en el periodo?'],
+      ['G', '¿Cuál módulo?'],
+    ]),
+  ]),
+  seccion('GP', 'Generalidades del proyecto', [
+    grupo(null, [
+      ['H', 'Nombre del proyecto'],
+      ['I', 'Línea de inversión'],
+      ['J', 'Duración del proyecto (meses)'],
+    ]),
+  ]),
+  seccion('B', 'B. Formulación y evaluación de proyectos', [
+    grupo('1. Talleres para la formulación de proyectos', [
+      ['K', 'Fecha'],
+      ['L', 'No. de participantes'],
+      ['M', 'Temáticas y aspectos a resaltar'],
+    ]),
+    grupo('2. Comité técnico de apoyo municipal', [
+      ['N', 'Fecha'],
+      ['O', 'No. de participantes'],
+      ['P', 'Instituciones, temáticas y acuerdos'],
+    ]),
+    grupo('3. Capacitación y asesoría', [
+      ['Q', 'Fecha'],
+      ['R', 'No. de participantes'],
+      ['S', 'Resumen de los avances en la formulación',
+        'Acciones realizadas, situación encontrada, recomendaciones y aspectos relevantes. Se diligencia cada mes en todas las organizaciones que estén en formulación de proyectos.'],
+    ]),
+  ]),
+  seccion('C', 'C. Seguimiento a la ejecución de proyectos', [
+    grupo('1. Talleres de concertación y seguimiento', [
+      ['T', 'Fecha'],
+      ['U', 'No. de participantes'],
+      ['V', 'Temáticas y aspectos a resaltar'],
+    ]),
+    grupo('2. Comité técnico de apoyo municipal', [
+      ['W', 'Fecha'],
+      ['X', 'No. de participantes'],
+      ['Y', 'Instituciones, temáticas y acuerdos'],
+    ]),
+    grupo('3. Capacitación y asesoría a las organizaciones comunitarias en ejecución de proyectos', [
+      ['Z', 'Fecha'],
+      ['AA', 'No. de participantes'],
+      ['AB', 'Resumen de los avances en la ejecución',
+        'Acciones realizadas, situación encontrada, motivos de atraso, recomendaciones y aspectos relevantes. Se diligencia cada mes en todas las organizaciones que estén en ejecución de proyectos.'],
+    ]),
+  ]),
+  seccion('D', 'D. Acompañamiento a fondos rotatorios', [
+    grupo('1. Acompañamiento y asesoría para el buen funcionamiento de los fondos rotatorios', [
+      ['AC', 'Tipo de asesoría'],
+      ['AD', 'Fecha'],
+      ['AE', 'No. de participantes'],
+      ['AF', 'Avances y compromisos'],
+    ]),
+  ]),
+  seccion('E', 'E. Acompañamiento y seguimiento a organizaciones comunitarias', [
+    grupo('Resultados ICO (rango)', [
+      ['AG', 'ICO I'],
+      ['AH', 'ICO II'],
+      ['AI', 'ICO III'],
+    ]),
+    grupo('1.1 Reuniones veredales: socialización y devolución de resultados ICO', [
+      ['AJ', 'Fecha'],
+      ['AK', 'No. de participantes'],
+      ['AL', 'Medio utilizado'],
+    ]),
+    grupo('1.2 Construcción y/o ajustes de los Planes de Fortalecimiento Comunitario', [
+      ['AM', 'Fecha'],
+      ['AN', 'No. de participantes'],
+      ['AO', 'Medio utilizado'],
+    ]),
+    grupo('2. Acompañamiento a la ejecución de los Planes de Fortalecimiento Comunitario', [
+      ['AP', 'Tipo de asesoría'],
+      ['AQ', 'Fecha'],
+      ['AR', 'No. de participantes'],
+      ['AS', 'Medio utilizado'],
+    ]),
+  ]),
+  seccion('F', 'F. Participación en espacios de relacionamiento con las comunidades', [
+    grupo(null, [
+      ['AT', '¿Participó en espacios de relacionamiento?',
+        'En las áreas de influencia, en el marco de los proyectos de la gestión ambiental. Si aplica, coloca la observación.'],
+    ]),
+  ]),
+  seccion('OBS', 'Observaciones', [
+    grupo(null, [
+      ['AU', 'Observaciones',
+        'Aspectos generales del funcionamiento de la organización y su avance en otras actividades complementarias relacionadas con el Acompañamiento Social.'],
+    ]),
+  ]),
 ];
 
 // Listas desplegables (columna -> opciones)
@@ -65,7 +134,10 @@ export const OPCIONES = {
 };
 
 // Columnas de texto largo
-export const AREAS = ['S', 'AB', 'AF', 'AU'];
+export const AREAS = ['M', 'P', 'S', 'V', 'Y', 'AB', 'AF', 'AU'];
+
+// Columnas numéricas: solo aceptan números (participantes y duración en meses)
+export const NUMEROS = ['J', 'L', 'O', 'R', 'U', 'X', 'AA', 'AE', 'AK', 'AN', 'AR'];
 
 // Columnas de fecha: se muestran con selector de fecha y se guardan como dd/mm/aaaa
 export const FECHAS = ['K', 'N', 'Q', 'T', 'W', 'Z', 'AD', 'AJ', 'AM', 'AQ'];
@@ -74,7 +146,7 @@ export const FECHAS = ['K', 'N', 'Q', 'T', 'W', 'Z', 'AD', 'AJ', 'AM', 'AQ'];
 export const DESTINO_INFORME = {
   tipoAsesoria: ['AP', 'Tipo de asesoría'],
   fecha: ['AQ', 'Fecha'],
-  participantes: ['AR', 'No de participantes'],
+  participantes: ['AR', 'No. de participantes'],
   medio: ['AS', 'Medio utilizado'],
   observaciones: ['AU', 'Observaciones'],
 };

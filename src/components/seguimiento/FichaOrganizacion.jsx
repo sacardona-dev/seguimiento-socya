@@ -2,15 +2,16 @@ import { DATOS, SECCIONES } from '../../config/esquemaExcel';
 import CampoEditable from './CampoEditable';
 
 /**
- * Todos los campos de una organización en un mes, agrupados por sección.
- * Cada sección muestra cuántos campos tienen dato, para saber qué falta sin abrirla.
+ * Todos los campos de una organización en un mes, agrupados por sección y subgrupo,
+ * en el mismo orden que el Excel. Cada sección muestra cuántos campos tienen dato.
  */
 export default function FichaOrganizacion({ mes, organizacion, onEditar }) {
-  const campos = lista => lista.map(([col, etiqueta]) => (
+  const campos = lista => lista.map(([col, etiqueta, ayuda]) => (
     <CampoEditable
       key={col}
       columna={col}
       etiqueta={etiqueta}
+      ayuda={ayuda}
       valor={organizacion.valor(col)}
       origen={organizacion.origen(col)}
       ultimoCambio={organizacion.ultimoCambio(col)}
@@ -28,7 +29,7 @@ export default function FichaOrganizacion({ mes, organizacion, onEditar }) {
       </section>
 
       <details className="seccion">
-        <summary>Datos generales de la organización</summary>
+        <summary><span>Datos generales de la organización</span></summary>
         <div className="seccion__cuerpo">{campos(DATOS)}</div>
       </details>
 
@@ -42,7 +43,18 @@ export default function FichaOrganizacion({ mes, organizacion, onEditar }) {
                 {avance.llenos} de {avance.total}
               </span>
             </summary>
-            <div className="seccion__cuerpo">{campos(s.campos)}</div>
+            <div className="seccion__grupos">
+              {s.grupos.map((g, i) => (
+                g.nombre ? (
+                  <fieldset className="grupo" key={i}>
+                    <legend className="grupo__titulo">{g.nombre}</legend>
+                    <div className="seccion__cuerpo">{campos(g.campos)}</div>
+                  </fieldset>
+                ) : (
+                  <div className="seccion__cuerpo" key={i}>{campos(g.campos)}</div>
+                )
+              ))}
+            </div>
           </details>
         );
       })}

@@ -42,7 +42,10 @@ export class ExportadorExcel {
 
   static #etiquetas() {
     const etiquetas = { ...ETIQUETAS_EXCEL_FIJAS };
-    SECCIONES.forEach(s => s.campos.forEach(([c, l]) => { etiquetas[c] = l; }));
+    // "1. Talleres… · Fecha": con el subgrupo, para no tener varias columnas que digan solo "Fecha"
+    SECCIONES.forEach(s => s.grupos.forEach(g => g.campos.forEach(([c, l]) => {
+      etiquetas[c] = g.nombre ? `${g.nombre} · ${l}` : l;
+    })));
     return etiquetas;
   }
 

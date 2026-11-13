@@ -144,6 +144,20 @@ main { display: block; }
 .seccion > summary::before { content: "▸"; color: var(--color-texto-suave); transition: transform .15s; }
 .seccion[open] > summary::before { transform: rotate(90deg); }
 .seccion > summary > span:first-child { flex: 1; }
+.seccion__grupos { display: grid; gap: var(--esp-4); padding: var(--esp-1) var(--esp-4) var(--esp-4); }
+.seccion__grupos > .seccion__cuerpo { padding: 0; }
+.grupo {
+  margin: 0; padding: var(--esp-4); min-width: 0;
+  border: 1px solid var(--color-borde); border-left: 4px solid var(--socya-lima);
+  border-radius: var(--radio-control); background: var(--color-fondo);
+}
+/* float + width: el título va DENTRO del recuadro y no montado sobre el borde (comportamiento por defecto de legend) */
+.grupo__titulo {
+  float: left; width: 100%; padding: 0 0 var(--esp-2); margin-bottom: var(--esp-3);
+  border-bottom: 1px solid var(--color-borde);
+  font-weight: 700; font-size: 14px; color: var(--color-texto);
+}
+.grupo .seccion__cuerpo { clear: both; padding: 0; }
 .seccion__cuerpo {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: var(--esp-4); padding: 0 var(--esp-4) var(--esp-4);
@@ -152,6 +166,7 @@ main { display: block; }
 /* ---------- Campos de formulario ---------- */
 .campo label { display: block; margin-bottom: var(--esp-1); font-size: var(--tamano-pequeno); color: var(--color-texto-suave); font-weight: 700; }
 .campo--ancho { grid-column: 1 / -1; }
+.campo__ayuda { display: block; margin-bottom: var(--esp-1); font-size: 12px; color: var(--color-texto-suave); }
 .campo__autor { display: block; margin-top: var(--esp-1); font-size: 11px; color: var(--color-texto-suave); overflow-wrap: anywhere; }
 .campo__nota { display: block; margin-top: var(--esp-1); font-size: 12px; color: var(--color-alerta); }
 .campo-contrasena { position: relative; }

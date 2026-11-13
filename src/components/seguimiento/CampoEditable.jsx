@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react';
-import { AREAS, FECHAS, OPCIONES } from '../../config/esquemaExcel';
+import { AREAS, FECHAS, NUMEROS, OPCIONES } from '../../config/esquemaExcel';
 import { excelAIso, isoAExcel } from '../../utils/fechas';
 
 const ETIQUETA_ORIGEN = {
@@ -8,22 +8,24 @@ const ETIQUETA_ORIGEN = {
 };
 
 /**
- * Un campo del Excel. Elige solo el control adecuado (lista, fecha, texto largo o texto corto).
+ * Un campo del Excel. Elige solo el control adecuado (lista, fecha, número, texto largo o texto corto).
  * Las listas guardan al elegir; fechas y textos guardan al salir del campo, no en cada tecla.
  */
-export default function CampoEditable({ columna, etiqueta, valor, origen, ultimoCambio, onGuardar }) {
+export default function CampoEditable({ columna, etiqueta, ayuda, valor, origen, ultimoCambio, onGuardar }) {
   const id = useId();
+  const idAyuda = useId();
   const [borrador, setBorrador] = useState(valor);
   useEffect(() => setBorrador(valor), [valor]);
 
   const guardarSiCambio = () => { if (borrador !== valor) onGuardar(borrador); };
   const opciones = OPCIONES[columna];
   const esArea = AREAS.includes(columna);
+  const comunes = { id, 'aria-describedby': ayuda ? idAyuda : undefined };
 
   let control;
   if (opciones) {
     control = (
-      <select id={id} value={borrador} onChange={e => { setBorrador(e.target.value); onGuardar(e.target.value); }}>
+      <select {...comunes} value={borrador} onChange={e => { setBorrador(e.target.value); onGuardar(e.target.value); }}>
         <option value="">Sin dato</option>
         {opciones.map(o => <option key={o}>{o}</option>)}
         {borrador && !opciones.includes(borrador) && <option>{borrador}</option>}
@@ -36,7 +38,7 @@ export default function CampoEditable({ columna, etiqueta, valor, origen, ultimo
     control = (
       <>
         <input
-          id={id}
+          {...comunes}
           type="date"
           value={excelAIso(borrador)}
           onChange={e => {
@@ -48,15 +50,34 @@ export default function CampoEditable({ columna, etiqueta, valor, origen, ultimo
         {noEsFecha && <small className="campo__nota">Valor actual: “{borrador}”. Elige una fecha para reemplazarlo.</small>}
       </>
     );
+  } else if (NUMEROS.includes(columna)) {
+    // Solo dígitos: lo que no sea número se quita mientras se escribe.
+    // Si ya había un valor que no es número (ej. "No aplica"), se avisa abajo y solo cambia si se escribe encima.
+    const noEsNumero = borrador && !/^\d+$/.test(String(borrador).trim());
+    control = (
+      <>
+        <input
+          {...comunes}
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={noEsNumero ? '' : borrador}
+          placeholder={noEsNumero ? 'Escribe un número' : undefined}
+          onChange={e => setBorrador(e.target.value.replace(/\D/g, ''))}
+          onBlur={() => { if (!noEsNumero) guardarSiCambio(); }}
+        />
+        {noEsNumero && <small className="campo__nota">Valor actual: “{borrador}”. Escribe un número para reemplazarlo.</small>}
+      </>
+    );
   } else if (esArea) {
-    control = <textarea id={id} value={borrador} onChange={e => setBorrador(e.target.value)} onBlur={guardarSiCambio} />;
+    control = <textarea {...comunes} value={borrador} onChange={e => setBorrador(e.target.value)} onBlur={guardarSiCambio} />;
   } else {
-    control = <input id={id} value={borrador} onChange={e => setBorrador(e.target.value)} onBlur={guardarSiCambio} />;
+    control = <input {...comunes} value={borrador} onChange={e => setBorrador(e.target.value)} onBlur={guardarSiCambio} />;
   }
 
   return (
     <div className={`campo ${esArea ? 'campo--ancho' : ''}`}>
       <label htmlFor={id}>{etiqueta}{ETIQUETA_ORIGEN[origen]}</label>
+      {ayuda && <small id={idAyuda} className="campo__ayuda">{ayuda}</small>}
       {control}
       {ultimoCambio && (
         <small className="campo__autor">
