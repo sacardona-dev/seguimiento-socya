@@ -11,7 +11,7 @@ const ETIQUETA_ORIGEN = {
  * Un campo del Excel. Elige solo el control adecuado (lista, fecha, número, texto largo o texto corto).
  * Las listas guardan al elegir; fechas y textos guardan al salir del campo, no en cada tecla.
  */
-export default function CampoEditable({ columna, etiqueta, ayuda, valor, origen, ultimoCambio, onGuardar }) {
+export default function CampoEditable({ columna, etiqueta, ayuda, mes, valor, origen, ultimoCambio, onGuardar }) {
   const id = useId();
   const idAyuda = useId();
   const [borrador, setBorrador] = useState(valor);
@@ -35,6 +35,8 @@ export default function CampoEditable({ columna, etiqueta, ayuda, valor, origen,
     // Si el valor guardado no es una fecha válida (ej. "No aplica"), se muestra abajo
     // para que no se pierda; solo cambia si la persona elige una fecha.
     const noEsFecha = borrador && !excelAIso(borrador);
+    // Aviso (no bloquea): una fecha de otro mes suele ser un error de digitación
+    const fueraDelMes = !noEsFecha && borrador && mes?.contieneFecha(borrador) === false;
     control = (
       <>
         <input
@@ -48,6 +50,7 @@ export default function CampoEditable({ columna, etiqueta, ayuda, valor, origen,
           onBlur={guardarSiCambio}
         />
         {noEsFecha && <small className="campo__nota">Valor actual: “{borrador}”. Elige una fecha para reemplazarlo.</small>}
+        {fueraDelMes && <small className="campo__nota">Esta fecha no es de {mes.label}. Revisa que sea correcta.</small>}
       </>
     );
   } else if (NUMEROS.includes(columna)) {

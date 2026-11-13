@@ -123,6 +123,11 @@ export const SECCIONES = [
   ]),
 ];
 
+// Columnas que se copian al abrir un mes nuevo (en los datos reales se repiten de un mes a otro
+// en más del 85 % de los casos): organización, módulo de escuela, proyecto y resultados ICO.
+// Todo lo demás (fechas, participantes, resúmenes, observaciones) empieza en blanco.
+export const COLUMNAS_QUE_SE_CONSERVAN = ['A', 'B', 'C', 'D', 'E', 'G', 'H', 'I', 'J', 'AG', 'AH', 'AI'];
+
 // Listas desplegables (columna -> opciones)
 const NIVELES_ICO = ['Experta', 'Avanzado', 'Funcional', 'Básico', 'No aplica'];
 export const OPCIONES = {

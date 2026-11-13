@@ -1,8 +1,9 @@
 import { RepositorioRegistros } from './RepositorioRegistros';
 
-/** Guarda en la tabla `registros` de Supabase. Lo ve todo el equipo. */
+/** Guarda en Supabase (tablas `registros` y `meses`). Lo ve todo el equipo, en vivo. */
 export class RepositorioSupabase extends RepositorioRegistros {
   static TABLA = 'registros';
+  static TABLA_MESES = 'meses';
   #cliente;
 
   constructor(cliente) {
@@ -20,10 +21,7 @@ export class RepositorioSupabase extends RepositorioRegistros {
       .select('*'); // '*' para no fallar si aún no existen las columnas de autoría (supabase/autoria.sql)
     if (error) throw error;
 
-    return data.reduce((registros, r) => RepositorioRegistros.agregar(registros, {
-      mes: r.mes, rowId: r.row_id, col: r.col, valor: r.valor, origen: r.origen,
-      autor: r.actualizado_por_correo, fecha: r.actualizado_en,
-    }), {});
+    return data.reduce((registros, fila) => RepositorioRegistros.agregar(registros, RepositorioSupabase.#aCambio(fila)), {});
   }
 
   async guardarCampo({ mes, rowId, col, valor, origen }) {
@@ -33,5 +31,44 @@ export class RepositorioSupabase extends RepositorioRegistros {
       { onConflict: 'mes,row_id,col' }
     );
     if (error) throw error;
+  }
+
+  async cargarMeses() {
+    const { data, error } = await this.#cliente.from(RepositorioSupabase.TABLA_MESES).select('*');
+    if (error) throw error;
+    return data.map(RepositorioSupabase.#aMes);
+  }
+
+  async guardarMes(mes) {
+    const { error } = await this.#cliente.from(RepositorioSupabase.TABLA_MESES).insert({
+      clave: mes.clave, anio: mes.anio, numero: mes.numero,
+      etiqueta: mes.label, nombre_hoja: mes.nombreHoja, filas: mes.rows,
+    });
+    if (error) throw error;
+  }
+
+  escuchar({ alCambiarCampo, alCrearMes }) {
+    const canal = this.#cliente
+      .channel(`seguimiento-${Math.random().toString(36).slice(2)}`) // nombre único por conexión
+      .on('postgres_changes', { event: '*', schema: 'public', table: RepositorioSupabase.TABLA },
+        ({ new: fila }) => { if (fila?.mes) alCambiarCampo(RepositorioSupabase.#aCambio(fila)); })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: RepositorioSupabase.TABLA_MESES },
+        ({ new: fila }) => alCrearMes(RepositorioSupabase.#aMes(fila)))
+      .subscribe();
+    return () => { this.#cliente.removeChannel(canal); };
+  }
+
+  static #aCambio(fila) {
+    return {
+      mes: fila.mes, rowId: fila.row_id, col: fila.col, valor: fila.valor, origen: fila.origen,
+      autor: fila.actualizado_por_correo, fecha: fila.actualizado_por_correo ? fila.actualizado_en : undefined,
+    };
+  }
+
+  static #aMes(fila) {
+    return {
+      clave: fila.clave, anio: fila.anio, numero: fila.numero,
+      label: fila.etiqueta, nombreHoja: fila.nombre_hoja, rows: fila.filas,
+    };
   }
 }

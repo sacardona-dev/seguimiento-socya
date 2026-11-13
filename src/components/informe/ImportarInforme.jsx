@@ -82,7 +82,7 @@ export default function ImportarInforme({ meses, onConfirmar, onCerrar }) {
 class ErrorInforme extends Error {}
 
 function armarPlan(informe, meses) {
-  const mes = meses.find(m => m.mm === informe.mm);
+  const mes = meses.find(m => m.numero === informe.numeroMes && m.anio === informe.anio);
   if (!mes) throw new ErrorInforme(`El informe tiene fecha ${informe.fecha || 'vacía'} y no hay un mes cargado para esa fecha.`);
 
   const organizacion = mes.buscarOrganizacion(informe);

@@ -1,9 +1,11 @@
-import * as XLSX from 'xlsx';
 import { ANCHO_HOJA, ETIQUETAS_EXCEL_FIJAS, SECCIONES } from '../config/esquemaExcel';
 import { indiceColumna } from '../utils/columnas';
 import { normalizar } from '../utils/texto';
 
-/** Genera un Excel con las columnas que maneja la app, en su misma posición. */
+/**
+ * Genera un Excel con las columnas que maneja la app, en su misma posición.
+ * La librería xlsx se descarga solo la primera vez que se exporta, para que la app abra rápido.
+ */
 export class ExportadorExcel {
   static #TIPO = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -12,7 +14,8 @@ export class ExportadorExcel {
    * @param {import('../domain/Organizacion').Organizacion[]} organizaciones  las que se van a exportar
    * @param {string[]} alcance  dónde está la persona, para el nombre del archivo (ej. ['Jaguas', 'Alejandría'])
    */
-  descargar(mes, organizaciones, alcance = []) {
+  async descargar(mes, organizaciones, alcance = []) {
+    const XLSX = await import('xlsx');
     const etiquetas = ExportadorExcel.#etiquetas();
     const columnas = Object.keys(etiquetas);
 

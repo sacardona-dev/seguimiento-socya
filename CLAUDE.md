@@ -20,7 +20,17 @@ Ver `README.md` para instalar, configurar Supabase y publicar.
 - PENDIENTE DE CONFIRMAR con la usuaria: si se registra quién hizo cada cambio. Está preparado en
   `supabase/autoria.sql` (trigger en la base de datos, nunca en la app) pero NO se ha corrido. La app
   funciona con o sin esas columnas; si existen, muestra "Editado por ..." en cada campo.
-  Tabla `registros` con llave `(mes, row_id, col)`. No cambiar sin migrar los datos existentes.
+- Tabla `registros` con llave `(mes, row_id, col)`. No cambiar sin migrar los datos existentes.
+- Clave de un mes (`Mes.clave`, la que va en `registros.mes`): los meses del Excel original usan
+  `'04'`…`'10'` (2026) y NO se cambian, porque los datos ya guardados dependen de eso. Los meses
+  abiertos desde la app usan `'aaaa-mm'` (`'2026-11'`) para no chocar entre años.
+- Meses nuevos: se abren desde el selector de mes ("＋ Abrir …"), solo el siguiente al último y solo
+  si ya empezó. Copian las mismas organizaciones con `COLUMNAS_QUE_SE_CONSERVAN` (esquemaExcel.js,
+  medido con los datos reales: se repiten > 85 % mes a mes); lo demás empieza en blanco. Se guardan
+  en la tabla `meses`; no se pueden editar ni borrar desde la app.
+- Las fechas fuera del mes elegido solo muestran aviso; no se bloquean.
+- Crear/cambiar contraseña (pantalla NuevaContrasena): mínimo 8 caracteres, una mayúscula y un número,
+  validado antes de enviar (`utils/contrasena.js`). El login NO valida esas reglas.
 
 ## Arquitectura (dónde va cada cosa)
 
@@ -34,11 +44,11 @@ src/
   components/
     ui/        piezas genéricas sin lógica de negocio: Boton, Modal, Aviso, Migas...
     layout/    estructura de página: Encabezado
-    <tema>/    piezas de una funcionalidad: seguimiento/, informe/, reuniones/
-  pages/       pantallas completas: Login, Panel
+    <tema>/    piezas de una funcionalidad: seguimiento/, informe/, reuniones/, meses/
+  pages/       pantallas completas: Login, NuevaContrasena, Panel
   styles/      tokens.css (colores/espacios), base.css (HTML suelto), componentes.css (clases)
-  utils/       funciones puras pequeñas: texto.js, columnas.js
-  data/        meses.json (datos del Excel)
+  utils/       funciones puras pequeñas: texto.js, columnas.js, fechas.js, contrasena.js
+  data/        meses.json (datos del Excel original, abril a octubre 2026)
 ```
 
 Flujo de dependencias, siempre en un solo sentido:
@@ -52,6 +62,8 @@ Un componente nunca llama a Supabase directo; `domain/` nunca importa React ni s
   - Encapsulamiento: campos privados `#` para lo interno (ej. `Organizacion.#fila`).
   - Herencia y polimorfismo: `RepositorioRegistros` (base) → `RepositorioSupabase` y `RepositorioLocal`.
     La app usa el repositorio sin saber cuál es. Un almacenamiento nuevo = nueva subclase.
+    El repositorio guarda campos y meses, y avisa en vivo (`escuchar`) los cambios de otras personas
+    (Supabase Realtime; en modo local no hace nada).
   - Responsabilidad única: cada clase hace una cosa (leer PDF, exportar Excel, autenticar...).
 - Un dato del Excel se lee con `organizacion.valor(col)`, nunca `fila[col]` directo
   (así siempre se respeta el cambio guardado por encima del original).
@@ -61,12 +73,12 @@ Un componente nunca llama a Supabase directo; `domain/` nunca importa React ni s
 
 | Ley | Cómo se aplica |
 |---|---|
-| Hick (menos opciones, decisión más rápida) | Un solo botón primario por zona ("Subir informe de visita"); el resto secundario o de texto. Buscador en tablas largas (8+ filas). |
+| Hick (menos opciones, decisión más rápida) | Un solo botón primario por zona ("Subir informe de visita"); el resto secundario o de texto. Buscador general de organizaciones junto a las migas, y buscador en tablas largas (8+ filas). |
 | Fitts (objetivos grandes y cercanos) | Todo lo clicable mide mínimo 44 px (`--alto-toque`). Filas de tabla y tarjetas completas son clicables. |
 | Jakob (lo familiar) | Migas de pan, pestañas, tablas y modales con patrones conocidos. Escape cierra ventanas. |
 | Miller / fragmentación | Campos agrupados en secciones plegables; solo se abren las que tienen datos. |
 | Gradiente de meta / Zeigarnik | Cada sección de la ficha muestra cuántos campos tienen dato ("3 de 9"). Sin barras de progreso: la usuaria las pidió quitar. |
-| Umbral de Doherty (respuesta < 400 ms) | La pantalla cambia al instante y el guardado va por detrás con indicador "Guardando… / Cambios guardados". "Leyendo el informe…" mientras procesa el PDF. |
+| Umbral de Doherty (respuesta < 400 ms) | La pantalla cambia al instante y el guardado va por detrás con indicador "Guardando… / Cambios guardados". "Leyendo el informe…" mientras procesa el PDF. pdfjs y xlsx se cargan solo al usarlos (`import()`), para que la app abra rápido. |
 | Pico-final | Mensaje de éxito al terminar de guardar un informe, con cuántos campos y dónde. |
 | Von Restorff | El botón primario es el único con color sólido. |
 | Proximidad / región común | Tarjetas y secciones con borde agrupan lo relacionado. |
@@ -99,4 +111,6 @@ contraste AA.
 - Marzo (Mes#1) no está cargado: su sección C tiene columnas distintas.
 - Mapeo "Acompañamiento Social" → sección E es provisional; confirmar lista real de tipos de intervención.
 - Acciones realizadas y recomendaciones van juntas a Observaciones; confirmar destino.
-- El paquete JS pesa ~1,6 MB (pdfjs + xlsx). Mejora futura: cargarlos solo al usarlos (`import()` dinámico).
+- Por confirmar con la organización: Excel con el formato oficial (encabezados combinados y colores)
+  para enviar a ISAGEN; roles (¿hay personas que solo consultan?); si se registra quién hizo cada cambio.
+- `meses.json` (~1 MB) va dentro del paquete principal. Si crece, cargarlo con `import()`.

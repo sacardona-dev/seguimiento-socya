@@ -14,18 +14,23 @@ Abre el enlace que aparece (normalmente http://localhost:5173). Sin configurar S
 ## 2. Configurar la nube (trabajo en equipo)
 
 1. Crea un proyecto gratis en https://supabase.com.
-2. En el panel de Supabase abre **SQL Editor**, pega el contenido de `supabase/schema.sql` y ejecútalo.
+2. En el panel de Supabase abre **SQL Editor**, pega el contenido de `supabase/schema.sql` y ejecútalo. Se puede volver a correr sin error cada vez que el archivo cambie.
 3. En **Authentication > Users**, crea un usuario por persona con correo y contraseña. Desactiva el registro público en **Authentication > Providers** para que nadie más pueda crear cuentas.
 4. En **Project Settings > API** copia la URL y la clave `anon public`.
 5. Copia `.env.example` como `.env` y pega esos dos valores.
 6. Reinicia `npm run dev`. Ahora aparece la pantalla de inicio de sesión.
 
-## 3. Publicar en internet
+## 3. Publicar en internet (Vercel)
 
-1. Sube esta carpeta a un repositorio privado de GitHub.
-2. En https://vercel.com crea un proyecto desde ese repositorio.
-3. En **Settings > Environment Variables** agrega `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` con los mismos valores del `.env`.
-4. Vercel publica la app en un enlace. Cada cambio que subas a GitHub se publica solo.
+1. Sube los cambios a GitHub (`git push`).
+2. Entra a https://vercel.com con tu cuenta de GitHub y elige **Add New → Project**.
+3. Importa el repositorio `seguimiento-socya`. Vercel detecta que es Vite; no cambies nada.
+4. En **Environment Variables** agrega `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` con los mismos valores del `.env`.
+5. Presiona **Deploy**. Al terminar te da un enlace (ej. `https://seguimiento-socya.vercel.app`). Cada cambio que subas a GitHub se publica solo.
+6. En Supabase, **Authentication → URL Configuration**:
+   - **Site URL**: el enlace de Vercel.
+   - **Redirect URLs**: agrega el enlace de Vercel y `http://localhost:5173`.
+   Sin esto, el correo de "¿Olvidaste tu contraseña?" lleva a una dirección equivocada.
 
 ## Estructura
 
@@ -45,6 +50,10 @@ Las reglas de organización, POO y leyes UX están en `CLAUDE.md`.
 - No se guardan celulares, cédulas, firmas ni fotos del informe.
 - Nada se guarda hasta que la persona confirma.
 - Cada dato indica si viene del informe ("Del informe") o se escribió a mano ("Manual").
+
+## Meses nuevos
+
+En el selector de mes aparece **＋ Abrir (mes siguiente)…** cuando ese mes ya empezó. Copia las organizaciones del último mes con sus datos fijos (organización, proyecto, módulo, ICO) y deja en blanco las actividades.
 
 ## Pendientes
 

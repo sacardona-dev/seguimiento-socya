@@ -12,19 +12,22 @@ import TablaOrganizaciones from '../components/seguimiento/TablaOrganizaciones';
 import FichaOrganizacion from '../components/seguimiento/FichaOrganizacion';
 import ImportarInforme from '../components/informe/ImportarInforme';
 import TablaReuniones from '../components/reuniones/TablaReuniones';
+import AbrirMesNuevo from '../components/meses/AbrirMesNuevo';
+import BuscadorOrganizaciones from '../components/seguimiento/BuscadorOrganizaciones';
 
 const DURACION_EXITO_MS = 6000;
 
 /** Pantalla principal: une encabezado, navegación y la vista de cada nivel. */
 export default function Panel() {
-  const { registros, editar, estadoGuardado, errorCarga, compartido } = useRegistros();
-  const meses = useMeses(registros);
+  const { registros, mesesRecibidos, editar, estadoGuardado, errorCarga, compartido } = useRegistros();
+  const { meses, errorMeses, mesSiguiente, abrirMesSiguiente } = useMeses(registros, mesesRecibidos);
   const nav = useNavegacion();
-  const [mm, setMm] = useState(() => meses.at(-1).mm); // por defecto, el mes más reciente
+  const [claveMes, setClaveMes] = useState(null); // null = el mes más reciente
   const [importando, setImportando] = useState(false);
+  const [abriendoMes, setAbriendoMes] = useState(false);
   const [exito, setExito] = useState('');
 
-  const mes = meses.find(m => m.mm === mm) ?? meses.at(-1);
+  const mes = meses.find(m => m.clave === claveMes) ?? meses.at(-1);
   const organizacion = nav.orgId !== null ? mes.buscarPorId(nav.orgId) : null;
 
   useEffect(() => {
@@ -33,22 +36,29 @@ export default function Panel() {
     return () => clearTimeout(t);
   }, [exito]);
 
-  function cambiarMes(nuevoMm) {
-    setMm(nuevoMm);
-    nav.reubicar(meses.find(m => m.mm === nuevoMm), organizacion);
+  function cambiarMes(clave) {
+    setClaveMes(clave);
+    nav.reubicar(meses.find(m => m.clave === clave), organizacion);
+  }
+
+  async function abrirMes() {
+    const nuevo = await abrirMesSiguiente();
+    setAbriendoMes(false);
+    cambiarMes(nuevo.clave);
+    setExito(`Abrimos ${nuevo.label} con ${nuevo.rows.length} organizaciones. Ya puedes registrar las actividades del mes.`);
   }
 
   /** Descarga solo lo que se está viendo: todo el mes, una central, un municipio o una organización. */
-  function descargarExcel() {
+  async function descargarExcel() {
     const { organizaciones, alcance } = vistaActual(nav, mes, organizacion);
-    exportadorExcel.descargar(mes, organizaciones, alcance);
+    await exportadorExcel.descargar(mes, organizaciones, alcance);
     const donde = alcance.length ? alcance.join(' › ') : 'todas las centrales';
     setExito(`Descargamos ${organizaciones.length} ${organizaciones.length === 1 ? 'organización' : 'organizaciones'} de ${donde} (${mes.label}).`);
   }
 
   function guardarInforme(mesDestino, org, cambios) {
-    cambios.forEach(c => editar(mesDestino.mm, org.id, c.col, c.val, 'pdf'));
-    setMm(mesDestino.mm);
+    cambios.forEach(c => editar(mesDestino.clave, org.id, c.col, c.val, 'pdf'));
+    setClaveMes(mesDestino.clave);
     nav.abrirOrganizacion(org);
     setImportando(false);
     setExito(`Guardamos ${cambios.length} ${cambios.length === 1 ? 'campo' : 'campos'} del informe en ${org.nombre} (${mesDestino.label}).`);
@@ -59,7 +69,9 @@ export default function Panel() {
       <Encabezado
         meses={meses}
         mesActual={mes}
+        mesSiguiente={mesSiguiente}
         onCambiarMes={cambiarMes}
+        onAbrirMesNuevo={() => setAbriendoMes(true)}
         onSubirInforme={() => setImportando(true)}
         onDescargarExcel={descargarExcel}
         onSalir={authService.requiereLogin ? () => authService.cerrarSesion() : null}
@@ -77,6 +89,7 @@ export default function Panel() {
       />
 
       {errorCarga && <Aviso tipo="error">{errorCarga}</Aviso>}
+      {errorMeses && <Aviso tipo="alerta">{errorMeses}</Aviso>}
       {exito && <Aviso tipo="exito" onCerrar={() => setExito('')}>{exito}</Aviso>}
 
       <main>
@@ -84,7 +97,10 @@ export default function Panel() {
           <TablaReuniones reuniones={REUNIONES} />
         ) : (
           <>
-            <Migas pasos={pasosMigas(nav, organizacion)} />
+            <div className="barra-navegacion">
+              <Migas pasos={pasosMigas(nav, organizacion)} />
+              <BuscadorOrganizaciones mes={mes} onElegir={nav.abrirOrganizacion} />
+            </div>
             {nav.nivel === 'centrales' && (
               <TarjetasGrupo grupos={mes.centrales()} textoSinNombre="Sin central" onElegir={nav.elegirCentral} />
             )}
@@ -98,12 +114,16 @@ export default function Panel() {
               <FichaOrganizacion
                 mes={mes}
                 organizacion={organizacion}
-                onEditar={(col, valor) => editar(mes.mm, organizacion.id, col, valor)}
+                onEditar={(col, valor) => editar(mes.clave, organizacion.id, col, valor)}
               />
             )}
           </>
         )}
       </main>
+
+      {abriendoMes && mesSiguiente && (
+        <AbrirMesNuevo mesSiguiente={mesSiguiente} onAbrir={abrirMes} onCerrar={() => setAbriendoMes(false)} />
+      )}
 
       {importando && (
         <ImportarInforme meses={meses} onConfirmar={guardarInforme} onCerrar={() => setImportando(false)} />

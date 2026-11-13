@@ -33,9 +33,13 @@ export class InformeVisita {
     Object.assign(this, datos);
   }
 
-  /** Mes del informe en dos dígitos ('04', '09'...), tomado de la fecha dd/mm/aaaa. */
-  get mm() {
-    return this.fecha ? this.fecha.substring(3, 5) : null;
+  /** Mes del informe (1 a 12), tomado de la fecha dd/mm/aaaa. */
+  get numeroMes() {
+    return this.fecha ? Number(this.fecha.substring(3, 5)) : null;
+  }
+
+  get anio() {
+    return this.fecha ? Number(this.fecha.substring(6, 10)) : null;
   }
 
   /** Medio de la visita: lo que va después de la barra en "Lugar/Medio". */

@@ -2,12 +2,23 @@ import { useId } from 'react';
 import Boton from '../ui/Boton';
 import EstadoGuardado from '../ui/EstadoGuardado';
 
+const OPCION_MES_NUEVO = '__mes_nuevo__';
+
 /**
  * Barra superior. Una sola acción primaria (Subir informe) para que destaque;
- * el resto queda como secundaria o de texto.
+ * el resto queda como secundaria o de texto. Abrir un mes nuevo va dentro del selector
+ * de mes, que es donde la persona lo busca.
  */
-export default function Encabezado({ meses, mesActual, onCambiarMes, onSubirInforme, onDescargarExcel, onSalir, modoLocal, estadoGuardado }) {
+export default function Encabezado({
+  meses, mesActual, mesSiguiente, onCambiarMes, onAbrirMesNuevo,
+  onSubirInforme, onDescargarExcel, onSalir, modoLocal, estadoGuardado,
+}) {
   const idMes = useId();
+
+  function alElegir(valor) {
+    if (valor === OPCION_MES_NUEVO) onAbrirMesNuevo();
+    else onCambiarMes(valor);
+  }
 
   return (
     <header className="encabezado">
@@ -20,8 +31,9 @@ export default function Encabezado({ meses, mesActual, onCambiarMes, onSubirInfo
         <EstadoGuardado estado={estadoGuardado} />
         <div className="campo-en-linea">
           <label htmlFor={idMes}>Mes</label>
-          <select id={idMes} value={mesActual.mm} onChange={e => onCambiarMes(e.target.value)}>
-            {meses.map(m => <option key={m.mm} value={m.mm}>{m.label}</option>)}
+          <select id={idMes} value={mesActual.clave} onChange={e => alElegir(e.target.value)}>
+            {meses.map(m => <option key={m.clave} value={m.clave}>{m.label}</option>)}
+            {mesSiguiente && <option value={OPCION_MES_NUEVO}>＋ Abrir {mesSiguiente.label}…</option>}
           </select>
         </div>
         <Boton onClick={onDescargarExcel}>Descargar Excel</Boton>

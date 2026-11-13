@@ -12,6 +12,7 @@ export default function FichaOrganizacion({ mes, organizacion, onEditar }) {
       columna={col}
       etiqueta={etiqueta}
       ayuda={ayuda}
+      mes={mes}
       valor={organizacion.valor(col)}
       origen={organizacion.origen(col)}
       ultimoCambio={organizacion.ultimoCambio(col)}
