@@ -1,6 +1,7 @@
-import { COLUMNAS_QUE_SE_CONSERVAN, ORDEN_CENTRALES } from '../config/esquemaExcel';
+import { COL, COLUMNAS_QUE_SE_CONSERVAN, ORDEN_CENTRALES } from '../config/esquemaExcel';
 import { excelAIso, NOMBRES_MES } from '../utils/fechas';
-import { claveNombre, normalizar } from '../utils/texto';
+import { claveNombre, estaVacio, normalizar } from '../utils/texto';
+import { CorrectorOrtografia } from './CorrectorOrtografia';
 import { Organizacion } from './Organizacion';
 
 /**
@@ -20,7 +21,9 @@ export class Mes {
     this.numero = datos.numero;
     this.label = datos.label;
     this.nombreHoja = datos.nombreHoja;
-    this.organizaciones = datos.rows.map(fila => new Organizacion(fila, cambiosDelMes[fila.id]));
+    this.organizaciones = datos.rows
+      .filter(Mes.#esOrganizacion)
+      .map(fila => new Organizacion(CorrectorOrtografia.corregirFila(fila), Mes.#corregirCambios(cambiosDelMes[fila.id])));
   }
 
   /** Convierte una hoja de meses.json ({ mm, label, nombre, rows }) al formato de Mes. */
@@ -72,6 +75,16 @@ export class Mes {
         });
         return fila;
       }),
+    };
+  }
+
+  /** Cifras generales del mes para el resumen de la pantalla de inicio. */
+  resumen() {
+    const unicos = criterio => new Set(this.organizaciones.map(criterio).filter(Boolean)).size;
+    return {
+      organizaciones: this.organizaciones.length,
+      centrales: unicos(o => o.central),
+      municipios: unicos(o => o.municipio),
     };
   }
 
@@ -136,6 +149,21 @@ export class Mes {
       grupos.set(nombre, g);
     });
     return [...grupos.values()];
+  }
+
+  /**
+   * Al final de cada hoja del Excel hay 7 filas que NO son organizaciones: las listas de apoyo de los
+   * desplegables (vigencias, tipos, "TOTAL"...). Ninguna tiene vigencia; todas las organizaciones sí.
+   */
+  static #esOrganizacion(fila) {
+    return !estaVacio(fila[COL.VIGENCIA]);
+  }
+
+  /** Corrige también los valores guardados por el equipo (ej. un "Si" elegido antes de corregir la lista). */
+  static #corregirCambios(cambios) {
+    if (!cambios) return cambios;
+    return Object.fromEntries(Object.entries(cambios).map(([col, c]) =>
+      [col, typeof c.v === 'string' ? { ...c, v: CorrectorOrtografia.corregir(col, c.v) } : c]));
   }
 
   static #rangoCentral(nombre) {

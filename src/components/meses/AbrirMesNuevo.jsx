@@ -14,20 +14,20 @@ export default function AbrirMesNuevo({ mesSiguiente, onAbrir, onCerrar }) {
     try {
       await onAbrir();
     } catch {
-      setError(`No pudimos abrir ${mesSiguiente.label}. Puede que otra persona ya lo haya abierto: recarga la página. Si sigue fallando, revisa que la tabla "meses" exista en Supabase.`);
+      setError(`No pudimos agregar ${mesSiguiente.label}. Puede que otra persona ya lo haya agregado: recarga la página. Si sigue fallando, revisa que la tabla "meses" exista en Supabase.`);
       setAbriendo(false);
     }
   }
 
   return (
     <Modal
-      titulo={`Abrir ${mesSiguiente.label}`}
+      titulo={`Agregar ${mesSiguiente.label}`}
       onCerrar={onCerrar}
       pie={
         <>
           <Boton variante="texto" onClick={onCerrar}>Cancelar</Boton>
           <Boton variante="primario" onClick={abrir} disabled={abriendo}>
-            {abriendo ? 'Abriendo…' : `Abrir ${mesSiguiente.label}`}
+            {abriendo ? 'Agregando…' : 'Agregar mes'}
           </Boton>
         </>
       }

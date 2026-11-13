@@ -45,17 +45,17 @@ export const SECCIONES = [
   seccion('B', 'B. Formulación y evaluación de proyectos', [
     grupo('1. Talleres para la formulación de proyectos', [
       ['K', 'Fecha'],
-      ['L', 'No. de participantes'],
+      ['L', 'N.º de participantes'],
       ['M', 'Temáticas y aspectos a resaltar'],
     ]),
     grupo('2. Comité técnico de apoyo municipal', [
       ['N', 'Fecha'],
-      ['O', 'No. de participantes'],
+      ['O', 'N.º de participantes'],
       ['P', 'Instituciones, temáticas y acuerdos'],
     ]),
     grupo('3. Capacitación y asesoría', [
       ['Q', 'Fecha'],
-      ['R', 'No. de participantes'],
+      ['R', 'N.º de participantes'],
       ['S', 'Resumen de los avances en la formulación',
         'Acciones realizadas, situación encontrada, recomendaciones y aspectos relevantes. Se diligencia cada mes en todas las organizaciones que estén en formulación de proyectos.'],
     ]),
@@ -63,17 +63,17 @@ export const SECCIONES = [
   seccion('C', 'C. Seguimiento a la ejecución de proyectos', [
     grupo('1. Talleres de concertación y seguimiento', [
       ['T', 'Fecha'],
-      ['U', 'No. de participantes'],
+      ['U', 'N.º de participantes'],
       ['V', 'Temáticas y aspectos a resaltar'],
     ]),
     grupo('2. Comité técnico de apoyo municipal', [
       ['W', 'Fecha'],
-      ['X', 'No. de participantes'],
+      ['X', 'N.º de participantes'],
       ['Y', 'Instituciones, temáticas y acuerdos'],
     ]),
     grupo('3. Capacitación y asesoría a las organizaciones comunitarias en ejecución de proyectos', [
       ['Z', 'Fecha'],
-      ['AA', 'No. de participantes'],
+      ['AA', 'N.º de participantes'],
       ['AB', 'Resumen de los avances en la ejecución',
         'Acciones realizadas, situación encontrada, motivos de atraso, recomendaciones y aspectos relevantes. Se diligencia cada mes en todas las organizaciones que estén en ejecución de proyectos.'],
     ]),
@@ -82,7 +82,7 @@ export const SECCIONES = [
     grupo('1. Acompañamiento y asesoría para el buen funcionamiento de los fondos rotatorios', [
       ['AC', 'Tipo de asesoría'],
       ['AD', 'Fecha'],
-      ['AE', 'No. de participantes'],
+      ['AE', 'N.º de participantes'],
       ['AF', 'Avances y compromisos'],
     ]),
   ]),
@@ -94,18 +94,18 @@ export const SECCIONES = [
     ]),
     grupo('1.1 Reuniones veredales: socialización y devolución de resultados ICO', [
       ['AJ', 'Fecha'],
-      ['AK', 'No. de participantes'],
+      ['AK', 'N.º de participantes'],
       ['AL', 'Medio utilizado'],
     ]),
     grupo('1.2 Construcción y/o ajustes de los Planes de Fortalecimiento Comunitario', [
       ['AM', 'Fecha'],
-      ['AN', 'No. de participantes'],
+      ['AN', 'N.º de participantes'],
       ['AO', 'Medio utilizado'],
     ]),
     grupo('2. Acompañamiento a la ejecución de los Planes de Fortalecimiento Comunitario', [
       ['AP', 'Tipo de asesoría'],
       ['AQ', 'Fecha'],
-      ['AR', 'No. de participantes'],
+      ['AR', 'N.º de participantes'],
       ['AS', 'Medio utilizado'],
     ]),
   ]),
@@ -129,13 +129,13 @@ export const SECCIONES = [
 export const COLUMNAS_QUE_SE_CONSERVAN = ['A', 'B', 'C', 'D', 'E', 'G', 'H', 'I', 'J', 'AG', 'AH', 'AI'];
 
 // Listas desplegables (columna -> opciones)
-const NIVELES_ICO = ['Experta', 'Avanzado', 'Funcional', 'Básico', 'No aplica'];
+const NIVELES_ICO = ['Experta', 'Avanzado', 'Funcional', 'Básico', 'En riesgo', 'Pendiente aplicación', 'No aplica'];
 export const OPCIONES = {
-  F: ['Si', 'No', 'Módulo terminado', 'Módulo Consolidado', 'Sin Escuela en el mes'],
+  F: ['Sí', 'No', 'Módulo terminado', 'Módulo consolidado', 'Sin Escuela en el mes'],
   AG: NIVELES_ICO,
   AH: NIVELES_ICO,
   AI: NIVELES_ICO,
-  AT: ['Si', 'No', 'No aplica'],
+  AT: ['Sí', 'No', 'No aplica'],
 };
 
 // Columnas de texto largo
@@ -151,7 +151,7 @@ export const FECHAS = ['K', 'N', 'Q', 'T', 'W', 'Z', 'AD', 'AJ', 'AM', 'AQ'];
 export const DESTINO_INFORME = {
   tipoAsesoria: ['AP', 'Tipo de asesoría'],
   fecha: ['AQ', 'Fecha'],
-  participantes: ['AR', 'No. de participantes'],
+  participantes: ['AR', 'N.º de participantes'],
   medio: ['AS', 'Medio utilizado'],
   observaciones: ['AU', 'Observaciones'],
 };
@@ -167,4 +167,4 @@ export const ETIQUETAS_EXCEL_FIJAS = {
 export const ANCHO_HOJA = 47;
 
 // Orden en que se muestran las centrales; las que no estén aquí van al final en orden alfabético
-export const ORDEN_CENTRALES = ['Jaguas', 'CALDERAS', 'SAN CARLOS', 'Miel I', 'Sogamoso', 'Pequeñas Centrales Hidroeléctricas'];
+export const ORDEN_CENTRALES = ['Jaguas', 'Calderas', 'San Carlos', 'Miel I', 'Sogamoso', 'Pequeñas Centrales Hidroeléctricas'];

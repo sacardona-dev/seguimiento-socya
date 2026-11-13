@@ -15,17 +15,22 @@ Ver `README.md` para instalar, configurar Supabase y publicar.
 - Cada dato guarda su origen: `pdf` ("Del informe") o `manual`.
 - "Descargar Excel" exporta SOLO lo que se ve en pantalla (todo el mes, una central, un municipio o una
   organización) del mes elegido. Decisión de la usuaria: es más fácil que bajar todas las filas.
-  Puede cambiar si la organización lo pide; no cambiarlo por iniciativa propia.
+  Puede cambiar si la organización lo pide; no cambiarlo por iniciativa propia. El botón NO va en la
+  franja de herramientas: va a la derecha del lugar actual y dice qué descarga ("Descargar Excel de
+  Jaguas", "…del mes", "…de esta organización"), porque arriba se veía feo y no se entendía qué bajaba.
 - Formato de registros (Supabase y navegador): `{ [mes]: { [rowId]: { [col]: { v, src, autor?, fecha? } } } }`.
 - PENDIENTE DE CONFIRMAR con la usuaria: si se registra quién hizo cada cambio. Está preparado en
   `supabase/autoria.sql` (trigger en la base de datos, nunca en la app) pero NO se ha corrido. La app
   funciona con o sin esas columnas; si existen, muestra "Editado por ..." en cada campo.
+- Las 7 filas finales de cada hoja del Excel son listas de apoyo de los desplegables, no organizaciones.
+  `Mes` las descarta porque no tienen vigencia (columna C). Toda organización real tiene vigencia.
 - Tabla `registros` con llave `(mes, row_id, col)`. No cambiar sin migrar los datos existentes.
 - Clave de un mes (`Mes.clave`, la que va en `registros.mes`): los meses del Excel original usan
   `'04'`…`'10'` (2026) y NO se cambian, porque los datos ya guardados dependen de eso. Los meses
   abiertos desde la app usan `'aaaa-mm'` (`'2026-11'`) para no chocar entre años.
-- Meses nuevos: se abren desde el selector de mes ("＋ Abrir …"), solo el siguiente al último y solo
-  si ya empezó. Copian las mismas organizaciones con `COLUMNAS_QUE_SE_CONSERVAN` (esquemaExcel.js,
+- Meses nuevos: botón "＋ Agregar nuevo mes" junto al selector de Mes (la usuaria lo pidió visible y
+  con texto corto: ni escondido en el selector ni con aviso largo). Solo agrega el siguiente al
+  último y solo si ya empezó; el botón desaparece cuando no hay mes por agregar. Copian las mismas organizaciones con `COLUMNAS_QUE_SE_CONSERVAN` (esquemaExcel.js,
   medido con los datos reales: se repiten > 85 % mes a mes); lo demás empieza en blanco. Se guardan
   en la tabla `meses`; no se pueden editar ni borrar desde la app.
 - Las fechas fuera del mes elegido solo muestran aviso; no se bloquean.
@@ -42,8 +47,8 @@ src/
                index.js crea UNA instancia de cada servicio; todo se importa desde ahí
   hooks/       estado de React reutilizable: useSesion, useRegistros, useMeses, useNavegacion
   components/
-    ui/        piezas genéricas sin lógica de negocio: Boton, Modal, Aviso, Migas...
-    layout/    estructura de página: Encabezado
+    ui/        piezas genéricas sin lógica de negocio: Boton, BotonVolver, Modal, Aviso...
+    layout/    estructura de página: BarraSuperior (navbar), Encabezado (herramientas de trabajo)
     <tema>/    piezas de una funcionalidad: seguimiento/, informe/, reuniones/, meses/
   pages/       pantallas completas: Login, NuevaContrasena, Panel
   styles/      tokens.css (colores/espacios), base.css (HTML suelto), componentes.css (clases)
@@ -73,14 +78,16 @@ Un componente nunca llama a Supabase directo; `domain/` nunca importa React ni s
 
 | Ley | Cómo se aplica |
 |---|---|
-| Hick (menos opciones, decisión más rápida) | Un solo botón primario por zona ("Subir informe de visita"); el resto secundario o de texto. Buscador general de organizaciones junto a las migas, y buscador en tablas largas (8+ filas). |
+| Hick (menos opciones, decisión más rápida) | Un solo botón primario por zona ("Subir informe de visita"); el resto secundario o de texto. Buscador general de organizaciones ancho, con lupa, justo debajo de las pestañas (recomendado y aceptado: no al lado de "Centrales"), y buscador en tablas largas (8+ filas). |
 | Fitts (objetivos grandes y cercanos) | Todo lo clicable mide mínimo 44 px (`--alto-toque`). Filas de tabla y tarjetas completas son clicables. |
-| Jakob (lo familiar) | Migas de pan, pestañas, tablas y modales con patrones conocidos. Escape cierra ventanas. |
+| Jakob (lo familiar) | Pestañas, tablas y modales con patrones conocidos. Escape cierra ventanas. Navegación: enlace pequeño "← Volver" y debajo, en letra pequeña, SOLO el nombre del lugar actual (en el inicio, "Centrales"). Nunca la ruta completa ni migas numeradas (la usuaria lo pidió así). Barra superior (navbar) azul noche, delgada y del mismo ancho que el contenido (no de borde a borde), con el título, el correo del usuario y "Cerrar sesión" (pedido de la usuaria; ya no hay pie de página). |
 | Miller / fragmentación | Campos agrupados en secciones plegables; solo se abren las que tienen datos. |
 | Gradiente de meta / Zeigarnik | Cada sección de la ficha muestra cuántos campos tienen dato ("3 de 9"). Sin barras de progreso: la usuaria las pidió quitar. |
 | Umbral de Doherty (respuesta < 400 ms) | La pantalla cambia al instante y el guardado va por detrás con indicador "Guardando… / Cambios guardados". "Leyendo el informe…" mientras procesa el PDF. pdfjs y xlsx se cargan solo al usarlos (`import()`), para que la app abra rápido. |
 | Pico-final | Mensaje de éxito al terminar de guardar un informe, con cuántos campos y dónde. |
 | Von Restorff | El botón primario es el único con color sólido. |
+| Vista general primero | La pantalla de inicio (centrales) muestra arriba el resumen del mes en cifras grandes: organizaciones, centrales y municipios (elegido por la usuaria). |
+| Proximidad (herramientas) | Franja blanca con dos grupos: a la izquierda lo del mes (selector + "＋ Agregar mes" discreto), a la derecha "Subir informe" (Descargar Excel va junto al lugar actual). |
 | Proximidad / región común | Tarjetas y secciones con borde agrupan lo relacionado. |
 | Tesler (la app absorbe la complejidad) | Detecta mes y organización del PDF; abre por defecto el mes más reciente; al cambiar de mes conserva dónde estabas. |
 | Postel (tolerante con lo que recibe) | El PDF se puede arrastrar o elegir; los nombres se comparan sin tildes ni palabras genéricas. |
@@ -98,6 +105,19 @@ contraste AA.
   aún no se ha definido qué logo va. No agregar uno sin confirmarlo con la usuaria.
 - Clases CSS en estilo BEM en español: `bloque__elemento--variante`.
 - Textos de la interfaz en primera persona plural, frases cortas ("Guardamos 5 campos…").
+
+## Ortografía de los datos
+
+- Se corrige al CARGAR, en `src/domain/CorrectorOrtografia.js` (un solo lugar con todas las reglas); el
+  `meses.json` conserva lo que trae el Excel. Aplica a todos los meses (también los agregados desde la
+  app), a los cambios guardados en listas (ej. "Si" → "Sí") y a las reuniones de equipo.
+- Criterio RAE: nombres propios (centrales, municipios, organizaciones, módulos, líneas de inversión)
+  con mayúscula en palabras importantes; valores comunes de listas solo con mayúscula inicial
+  ("En riesgo"); tildes ("Sí", "Río", "Chucurí"); sin espacios dobles; "N.º" y no "No." para número.
+- Los textos libres (resúmenes, observaciones) solo se limpian de espacios: no se reescribe lo que
+  escribió cada persona.
+- Para una corrección nueva: agregarla al mapa de su columna en `CorrectorOrtografia`, no en otro lado.
+- `meses.json`: se corrigió a mano el municipio "," de 5 organizaciones de julio (eran de Concepción).
 
 ## Convenciones de código
 

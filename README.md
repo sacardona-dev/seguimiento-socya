@@ -53,7 +53,7 @@ Las reglas de organización, POO y leyes UX están en `CLAUDE.md`.
 
 ## Meses nuevos
 
-En el selector de mes aparece **＋ Abrir (mes siguiente)…** cuando ese mes ya empezó. Copia las organizaciones del último mes con sus datos fijos (organización, proyecto, módulo, ICO) y deja en blanco las actividades.
+Cuando empieza un mes que no se ha agregado, aparece junto al selector de Mes el botón **＋ Agregar nuevo mes**. Copia las organizaciones del último mes con sus datos fijos (organización, proyecto, módulo, ICO) y deja en blanco las actividades.
 
 ## Pendientes
 

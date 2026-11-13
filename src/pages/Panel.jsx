@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { authService, exportadorExcel } from '../services';
+import { exportadorExcel } from '../services';
 import { useMeses, REUNIONES } from '../hooks/useMeses';
 import { useNavegacion } from '../hooks/useNavegacion';
 import { useRegistros } from '../hooks/useRegistros';
 import Encabezado from '../components/layout/Encabezado';
+import BarraSuperior from '../components/layout/BarraSuperior';
+import BotonVolver from '../components/ui/BotonVolver';
+import { IconoDescargar } from '../components/ui/Iconos';
 import Aviso from '../components/ui/Aviso';
-import Migas from '../components/ui/Migas';
 import Pestanas from '../components/ui/Pestanas';
 import TarjetasGrupo from '../components/seguimiento/TarjetasGrupo';
 import TablaOrganizaciones from '../components/seguimiento/TablaOrganizaciones';
@@ -14,6 +16,7 @@ import ImportarInforme from '../components/informe/ImportarInforme';
 import TablaReuniones from '../components/reuniones/TablaReuniones';
 import AbrirMesNuevo from '../components/meses/AbrirMesNuevo';
 import BuscadorOrganizaciones from '../components/seguimiento/BuscadorOrganizaciones';
+import ResumenMes from '../components/seguimiento/ResumenMes';
 
 const DURACION_EXITO_MS = 6000;
 
@@ -29,6 +32,7 @@ export default function Panel() {
 
   const mes = meses.find(m => m.clave === claveMes) ?? meses.at(-1);
   const organizacion = nav.orgId !== null ? mes.buscarPorId(nav.orgId) : null;
+  const pasos = pasosNavegacion(nav, organizacion);
 
   useEffect(() => {
     if (!exito) return;
@@ -45,7 +49,7 @@ export default function Panel() {
     const nuevo = await abrirMesSiguiente();
     setAbriendoMes(false);
     cambiarMes(nuevo.clave);
-    setExito(`Abrimos ${nuevo.label} con ${nuevo.rows.length} organizaciones. Ya puedes registrar las actividades del mes.`);
+    setExito(`Agregamos ${nuevo.label} con ${nuevo.rows.length} organizaciones.`);
   }
 
   /** Descarga solo lo que se está viendo: todo el mes, una central, un municipio o una organización. */
@@ -65,17 +69,15 @@ export default function Panel() {
   }
 
   return (
+    <>
+    <BarraSuperior modoLocal={!compartido} />
     <div className="app">
       <Encabezado
         meses={meses}
         mesActual={mes}
-        mesSiguiente={mesSiguiente}
         onCambiarMes={cambiarMes}
-        onAbrirMesNuevo={() => setAbriendoMes(true)}
+        onAgregarMes={mesSiguiente ? () => setAbriendoMes(true) : null}
         onSubirInforme={() => setImportando(true)}
-        onDescargarExcel={descargarExcel}
-        onSalir={authService.requiereLogin ? () => authService.cerrarSesion() : null}
-        modoLocal={!compartido}
         estadoGuardado={estadoGuardado}
       />
 
@@ -97,9 +99,16 @@ export default function Panel() {
           <TablaReuniones reuniones={REUNIONES} />
         ) : (
           <>
+            <BuscadorOrganizaciones mes={mes} onElegir={nav.abrirOrganizacion} />
+            {nav.nivel === 'centrales' && <ResumenMes mes={mes} />}
             <div className="barra-navegacion">
-              <Migas pasos={pasosMigas(nav, organizacion)} />
-              <BuscadorOrganizaciones mes={mes} onElegir={nav.abrirOrganizacion} />
+              <div className="barra-navegacion__ruta">
+                {pasos.length > 1 && <BotonVolver destino={pasos.at(-2).texto} onClick={pasos.at(-2).onClick} />}
+                <h2 className="barra-navegacion__lugar">{pasos.at(-1).texto}</h2>
+              </div>
+              <button type="button" className="boton-descargar" onClick={descargarExcel}>
+                <IconoDescargar /> {textoDescarga(nav, organizacion)}
+              </button>
             </div>
             {nav.nivel === 'centrales' && (
               <TarjetasGrupo grupos={mes.centrales()} textoSinNombre="Sin central" onElegir={nav.elegirCentral} />
@@ -129,7 +138,16 @@ export default function Panel() {
         <ImportarInforme meses={meses} onConfirmar={guardarInforme} onCerrar={() => setImportando(false)} />
       )}
     </div>
+    </>
   );
+}
+
+/** Dice exactamente qué baja el botón, según dónde está la persona. */
+function textoDescarga(nav, organizacion) {
+  if (organizacion) return 'Descargar Excel de esta organización';
+  if (nav.municipio !== null) return `Descargar Excel de ${nav.municipio || 'este municipio'}`;
+  if (nav.central !== null) return `Descargar Excel de ${nav.central || 'esta central'}`;
+  return 'Descargar Excel del mes';
 }
 
 /** Organizaciones que se ven en pantalla y el nombre de ese lugar. */
@@ -142,7 +160,8 @@ function vistaActual(nav, mes, organizacion) {
   return { organizaciones: mes.organizaciones, alcance: [] };
 }
 
-function pasosMigas(nav, organizacion) {
+/** Niveles por los que pasó la persona: dónde está (el último) y a dónde vuelve la flecha (el anterior). */
+function pasosNavegacion(nav, organizacion) {
   const pasos = [{ texto: 'Centrales', onClick: nav.irAInicio }];
   if (nav.central !== null) pasos.push({ texto: nav.central || 'Sin central', onClick: () => nav.elegirCentral(nav.central) });
   if (nav.municipio !== null) pasos.push({ texto: nav.municipio || 'Sin municipio', onClick: () => nav.elegirMunicipio(nav.municipio) });

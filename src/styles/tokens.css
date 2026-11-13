@@ -45,6 +45,8 @@
   --color-alerta-fondo: #FFF0E0;
   --color-error: var(--socya-rojo);
   --color-error-fondo: #FBE9E9;
+  --color-barra: var(--socya-noche);
+  --color-barra-texto: #FFFFFF;
 
   /* Tipografía */
   --fuente-titulo: "Laca", "Futura", "Century Gothic", "Avenir Next", sans-serif;
@@ -89,5 +91,6 @@
     --color-alerta-fondo: #4A2A0A;
     --color-error: #FF8A8A;
     --color-error-fondo: #4A1515;
+    --color-barra: #0E2F39;
   }
 }

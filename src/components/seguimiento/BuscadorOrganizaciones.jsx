@@ -1,4 +1,5 @@
 import { useId, useState } from 'react';
+import { IconoLupa } from '../ui/Iconos';
 
 /**
  * Busca una organización por nombre en todo el mes, sin pasar por central y municipio.
@@ -27,6 +28,7 @@ export default function BuscadorOrganizaciones({ mes, onElegir }) {
 
   return (
     <div className="buscador-global">
+      <span className="buscador-global__icono"><IconoLupa /></span>
       <input
         type="search"
         placeholder="Buscar organización por nombre…"
