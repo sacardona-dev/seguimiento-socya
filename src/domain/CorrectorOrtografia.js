@@ -62,7 +62,7 @@ export class CorrectorOrtografia {
   // Correcciones de la tabla de reuniones de equipo (por campo)
   static #REUNIONES = {
     municipio: { 'vodeoconferencia': 'Videoconferencia' },
-    isagen: { 'no': 'No', 'si': 'Sí' },
+    isagen: { 'no': 'No', 'si': 'Sí', 'sin acompanamiento': 'No', 'con acompanamiento': 'Sí' },
   };
 
   /** Devuelve una copia de la reunión con la ortografía corregida. */

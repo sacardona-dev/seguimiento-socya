@@ -1,12 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import datos from '../data/meses.json';
-import { CorrectorOrtografia } from '../domain/CorrectorOrtografia';
 import { Mes } from '../domain/Mes';
 import { repositorio } from '../services';
-
-// La hoja de reuniones trae filas de totales con fórmulas del Excel (ej. "=COUNTA(B3:B20)"): no son reuniones
-const esReunion = r => !Object.values(r).some(v => typeof v === 'string' && v.trim().startsWith('='));
-export const REUNIONES = datos.reuniones.filter(esReunion).map(CorrectorOrtografia.corregirReunion);
 
 const MESES_EXCEL = datos.meses.map(Mes.desdeHojaExcel);
 

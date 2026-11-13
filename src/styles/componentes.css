@@ -33,6 +33,8 @@ main { display: block; }
 .btn--secundario:hover:not(:disabled) { background: var(--color-resalte); }
 .btn--texto { background: transparent; color: var(--color-enlace); }
 .btn--texto:hover:not(:disabled) { background: var(--color-resalte); }
+.btn--peligro { background: var(--socya-rojo); color: var(--color-sobre-error); }
+.btn--peligro:hover:not(:disabled) { filter: brightness(.9); }
 .btn--icono {
   min-width: var(--alto-toque); padding: 0; font-size: 22px; line-height: 1;
   background: transparent; color: var(--color-texto-suave); border-radius: 50%;
@@ -193,6 +195,56 @@ main { display: block; }
 .tabla tbody tr:last-child td { border-bottom: none; }
 .tabla__fila-clic { cursor: pointer; }
 .tabla__fila-clic:hover td { background: var(--color-resalte); }
+
+/* ---------- Reuniones de equipo ---------- */
+.filtros-reuniones {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--esp-3);
+  margin-bottom: var(--esp-4);
+}
+.filtros-reuniones__grupo { display: flex; flex-wrap: wrap; align-items: center; gap: var(--esp-2); }
+.filtros-reuniones select { width: auto; min-width: 170px; border-radius: 999px; }
+.lista-reuniones { display: grid; gap: var(--esp-3); }
+.reunion { display: grid; gap: var(--esp-2); }
+.reunion__encabezado { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--esp-2); }
+.reunion__titulo { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--esp-1) var(--esp-3); }
+.reunion__acciones { display: flex; gap: var(--esp-1); }
+.boton-icono-texto {
+  display: inline-flex; align-items: center; gap: var(--esp-1); min-height: 36px; padding: 0 var(--esp-2);
+  background: none; border: none; border-radius: var(--radio-control); cursor: pointer;
+  color: var(--color-enlace); font-weight: 700; font-size: 13px;
+}
+.boton-icono-texto:hover { background: var(--color-resalte); }
+.boton-icono-texto svg { width: 16px; height: 16px; }
+.boton-icono-texto--peligro { color: var(--color-error); }
+/* Paginación (de 5 en 5) */
+.paginacion { display: grid; justify-items: center; gap: var(--esp-2); margin-top: var(--esp-5); }
+.paginacion__controles { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--esp-1); }
+.paginacion__boton, .paginacion__numero {
+  min-height: 40px; min-width: 40px; padding: 0 var(--esp-3); cursor: pointer;
+  background: var(--color-superficie); border: 1px solid var(--color-borde); border-radius: 999px;
+  color: var(--color-enlace); font-weight: 700; font-size: 14px;
+}
+.paginacion__numero { padding: 0; }
+.paginacion__boton:hover:not(:disabled), .paginacion__numero:hover { background: var(--color-resalte); }
+.paginacion__boton:disabled { opacity: .4; cursor: not-allowed; }
+.paginacion__numero[aria-current="page"] { background: var(--color-primario); color: var(--color-primario-texto); border-color: var(--color-primario); }
+.paginacion__texto { font-size: 13px; color: var(--color-texto-suave); }
+.reunion__fecha { font-family: var(--fuente-titulo); font-size: 16px; }
+.reunion__datos { display: flex; flex-wrap: wrap; gap: var(--esp-2); }
+.reunion__datos .etiqueta { margin-left: 0; font-size: 12px; padding: 2px var(--esp-2); }
+.reunion__objetivo { white-space: pre-line; font-size: 14px; line-height: 1.55; }
+.vacio--tarjeta {
+  display: grid; justify-items: center; gap: var(--esp-2); padding: var(--esp-6) var(--esp-4);
+  background: var(--color-superficie); border: 1px dashed var(--color-borde-control); border-radius: var(--radio);
+}
+
+/* Formulario de reunión */
+.formulario-reunion { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--esp-4); }
+.opciones-si-no { margin: 0; padding: 0; border: none; display: flex; flex-wrap: wrap; align-items: center; gap: var(--esp-4); }
+.opciones-si-no legend { padding: 0; margin-bottom: var(--esp-2); font-size: var(--tamano-pequeno); font-weight: 700; color: var(--color-texto-suave); }
+/* Más específico que ".campo label" para que Sí/No no tomen el estilo pequeño de las etiquetas */
+.campo .opciones-si-no__opcion { display: inline-flex; align-items: center; gap: var(--esp-2); min-height: var(--alto-toque); margin: 0; cursor: pointer; font-size: 15px; font-weight: 400; color: var(--color-texto); }
+.opciones-si-no__opcion input { width: 20px; min-height: 0; height: 20px; accent-color: var(--color-primario); }
 
 /* ---------- Ficha de organización ---------- */
 .ficha__resumen { margin-bottom: var(--esp-4); display: grid; gap: var(--esp-2); }

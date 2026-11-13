@@ -37,19 +37,35 @@ Ver `README.md` para instalar, configurar Supabase y publicar.
 - Crear/cambiar contraseña (pantalla NuevaContrasena): mínimo 8 caracteres, una mayúscula y un número,
   validado antes de enviar (`utils/contrasena.js`). El login NO valida esas reglas.
 
+- Reuniones de equipo: las del Excel (33, feb–sep 2026) viven en `meses.json`; las nuevas se registran
+  desde la app en la tabla `reuniones`. Solo quien registró una reunión puede editarla o borrarla
+  (política RLS con `creado_por = auth.uid()`; la app solo muestra los botones a esa persona). Las del
+  Excel no se editan. Las tarjetas se muestran de 5 en 5 con paginación (componente `ui/Paginacion`);
+  la usuaria lo pidió para que no sea una fila larga. Cambiar de página o de filtro NO devuelve a la página 1 ni
+  mueve la pantalla, y al salir de la pestaña y volver se conserva página y filtros (estado en Panel). El filtro "Ver" tiene sus
+  PROPIOS meses (los que tienen reuniones, + "Todas las fechas"), independiente de los meses de las
+  organizaciones; por defecto, el mes elegido en Organizaciones si tiene reuniones, si no el más reciente.
+  En la pestaña Reuniones NO se muestra la franja de arriba (Mes, Agregar mes, Subir informe): son de las
+  organizaciones. Filtro por central. Sin botón de
+  descargar Excel de reuniones ni cifras de resumen arriba (la usuaria los pidió quitar). El mes de una
+  reunión del Excel se toma del final de su fecha ("21, 22, 23 /04/2026" → abril 2026). Versión anterior
+  (tabla de solo lectura) guardada en la etiqueta de git `antes-de-reuniones`.
+
 ## Arquitectura (dónde va cada cosa)
 
 ```
 src/
   config/      constantes y conexión: esquemaExcel.js (columnas, secciones, opciones), supabaseClient.js
-  domain/      CLASES con reglas de negocio, sin React ni Supabase: Mes, Organizacion, InformeVisita
+  domain/      CLASES con reglas de negocio, sin React ni Supabase: Mes, Organizacion, InformeVisita,
+               Reunion, CorrectorOrtografia
   services/    CLASES que hablan con el exterior: repositorios, AuthService, LectorPdf, ExportadorExcel
                index.js crea UNA instancia de cada servicio; todo se importa desde ahí
-  hooks/       estado de React reutilizable: useSesion, useRegistros, useMeses, useNavegacion
+  hooks/       estado de React reutilizable: useSesion, useRegistros, useMeses, useReuniones, useNavegacion
   components/
     ui/        piezas genéricas sin lógica de negocio: Boton, BotonVolver, Modal, Aviso...
     layout/    estructura de página: BarraSuperior (navbar), Encabezado (herramientas de trabajo)
-    <tema>/    piezas de una funcionalidad: seguimiento/, informe/, reuniones/, meses/
+    <tema>/    piezas de una funcionalidad: seguimiento/, informe/, reuniones/ (VistaReuniones, TarjetaReunion,
+               FormularioReunion), meses/
   pages/       pantallas completas: Login, NuevaContrasena, Panel
   styles/      tokens.css (colores/espacios), base.css (HTML suelto), componentes.css (clases)
   utils/       funciones puras pequeñas: texto.js, columnas.js, fechas.js, contrasena.js

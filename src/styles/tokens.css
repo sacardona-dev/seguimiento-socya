@@ -47,6 +47,7 @@
   --color-error-fondo: #FBE9E9;
   --color-barra: var(--socya-noche);
   --color-barra-texto: #FFFFFF;
+  --color-sobre-error: #FFFFFF;
 
   /* Tipografía */
   --fuente-titulo: "Laca", "Futura", "Century Gothic", "Avenir Next", sans-serif;

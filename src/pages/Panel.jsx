@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { exportadorExcel } from '../services';
-import { useMeses, REUNIONES } from '../hooks/useMeses';
+import { useMeses } from '../hooks/useMeses';
 import { useNavegacion } from '../hooks/useNavegacion';
 import { useRegistros } from '../hooks/useRegistros';
 import Encabezado from '../components/layout/Encabezado';
@@ -13,7 +13,7 @@ import TarjetasGrupo from '../components/seguimiento/TarjetasGrupo';
 import TablaOrganizaciones from '../components/seguimiento/TablaOrganizaciones';
 import FichaOrganizacion from '../components/seguimiento/FichaOrganizacion';
 import ImportarInforme from '../components/informe/ImportarInforme';
-import TablaReuniones from '../components/reuniones/TablaReuniones';
+import VistaReuniones from '../components/reuniones/VistaReuniones';
 import AbrirMesNuevo from '../components/meses/AbrirMesNuevo';
 import BuscadorOrganizaciones from '../components/seguimiento/BuscadorOrganizaciones';
 import ResumenMes from '../components/seguimiento/ResumenMes';
@@ -29,6 +29,8 @@ export default function Panel() {
   const [importando, setImportando] = useState(false);
   const [abriendoMes, setAbriendoMes] = useState(false);
   const [exito, setExito] = useState('');
+  // Filtros y página de Reuniones: viven aquí para que no se pierdan al cambiar de pestaña
+  const [filtrosReuniones, setFiltrosReuniones] = useState({ periodo: null, central: '', pagina: 1 });
 
   const mes = meses.find(m => m.clave === claveMes) ?? meses.at(-1);
   const organizacion = nav.orgId !== null ? mes.buscarPorId(nav.orgId) : null;
@@ -72,14 +74,17 @@ export default function Panel() {
     <>
     <BarraSuperior modoLocal={!compartido} />
     <div className="app">
-      <Encabezado
-        meses={meses}
-        mesActual={mes}
-        onCambiarMes={cambiarMes}
-        onAgregarMes={mesSiguiente ? () => setAbriendoMes(true) : null}
-        onSubirInforme={() => setImportando(true)}
-        estadoGuardado={estadoGuardado}
-      />
+      {/* Mes, Agregar mes y Subir informe son de las organizaciones: en Reuniones no se muestran */}
+      {nav.nivel !== 'reuniones' && (
+        <Encabezado
+          meses={meses}
+          mesActual={mes}
+          onCambiarMes={cambiarMes}
+          onAgregarMes={mesSiguiente ? () => setAbriendoMes(true) : null}
+          onSubirInforme={() => setImportando(true)}
+          estadoGuardado={estadoGuardado}
+        />
+      )}
 
       <Pestanas
         valor={nav.nivel === 'reuniones' ? 'reuniones' : 'organizaciones'}
@@ -96,7 +101,13 @@ export default function Panel() {
 
       <main>
         {nav.nivel === 'reuniones' ? (
-          <TablaReuniones reuniones={REUNIONES} />
+          <VistaReuniones
+            mes={mes}
+            lugaresSugeridos={lugaresSugeridos(mes)}
+            filtros={filtrosReuniones}
+            onCambiarFiltros={setFiltrosReuniones}
+            onExito={setExito}
+          />
         ) : (
           <>
             <BuscadorOrganizaciones mes={mes} onElegir={nav.abrirOrganizacion} />
@@ -140,6 +151,11 @@ export default function Panel() {
     </div>
     </>
   );
+}
+
+/** Lugares que sugiere el formulario de reuniones: los municipios del mes y la opción virtual. */
+function lugaresSugeridos(mes) {
+  return [...new Set(mes.organizaciones.map(o => o.municipio).filter(Boolean)), 'Videoconferencia'].sort();
 }
 
 /** Dice exactamente qué baja el botón, según dónde está la persona. */
