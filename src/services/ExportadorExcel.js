@@ -1,6 +1,9 @@
-import { ANCHO_HOJA, ETIQUETAS_EXCEL_FIJAS, SECCIONES } from '../config/esquemaExcel';
-import { indiceColumna } from '../utils/columnas';
+import { ANCHO_HOJA, ETIQUETAS_EXCEL_FIJAS, GRUPOS_REPETIBLES, SECCIONES } from '../config/esquemaExcel';
+import { columnaActividad, indiceColumna } from '../utils/columnas';
 import { normalizar } from '../utils/texto';
+
+// Columnas de los subgrupos que pueden tener varias fechas (van en sub-filas)
+const COLUMNAS_REPETIBLES = new Set(GRUPOS_REPETIBLES.flatMap(g => g.campos.map(([c]) => c)));
 
 /**
  * Genera un Excel con las columnas que maneja la app, en su misma posición.
@@ -22,14 +25,26 @@ export class ExportadorExcel {
     const cabecera = ExportadorExcel.#filaVacia();
     columnas.forEach(c => { cabecera[indiceColumna(c)] = etiquetas[c]; });
 
-    const filas = organizaciones.map(org => {
-      const fila = ExportadorExcel.#filaVacia();
-      columnas.forEach(c => { fila[indiceColumna(c)] = org.valor(c); });
-      return fila;
+    // Como en el Excel original: si una organización tiene varias fechas, su fila se parte en
+    // sub-filas (una por fecha) y las demás columnas quedan combinadas a lo alto.
+    const filas = [];
+    const combinadas = [];
+    organizaciones.forEach(org => {
+      const bloque = ExportadorExcel.#bloqueOrganizacion(org, columnas);
+      if (bloque.length > 1) {
+        const inicio = filas.length + 1; // +1 por la cabecera
+        columnas.filter(c => !COLUMNAS_REPETIBLES.has(c)).forEach(c => {
+          const col = indiceColumna(c);
+          combinadas.push({ s: { r: inicio, c: col }, e: { r: inicio + bloque.length - 1, c: col } });
+        });
+      }
+      filas.push(...bloque);
     });
 
+    const hoja = XLSX.utils.aoa_to_sheet([cabecera, ...filas]);
+    hoja['!merges'] = combinadas;
     const libro = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(libro, XLSX.utils.aoa_to_sheet([cabecera, ...filas]), mes.nombreHoja.slice(0, 31));
+    XLSX.utils.book_append_sheet(libro, hoja, mes.nombreHoja.slice(0, 31));
     const bytes = XLSX.write(libro, { type: 'array', bookType: 'xlsx' });
     ExportadorExcel.#bajar(new Blob([bytes], { type: ExportadorExcel.#TIPO }), ExportadorExcel.#nombreArchivo(mes, alcance));
   }
@@ -50,6 +65,22 @@ export class ExportadorExcel {
       etiquetas[c] = g.nombre ? `${g.nombre} · ${l}` : l;
     })));
     return etiquetas;
+  }
+
+  /**
+   * Filas de una organización: la primera con todos sus datos y, si algún subgrupo tiene varias
+   * fechas, una sub-fila más por cada fecha extra (solo con las columnas de ese subgrupo).
+   */
+  static #bloqueOrganizacion(org, columnas) {
+    const porGrupo = GRUPOS_REPETIBLES.map(g => ({ g, fechas: org.actividades(g) }));
+    const alto = Math.max(1, ...porGrupo.map(x => x.fechas.length));
+    const bloque = Array.from({ length: alto }, () => ExportadorExcel.#filaVacia());
+
+    columnas.filter(c => !COLUMNAS_REPETIBLES.has(c)).forEach(c => { bloque[0][indiceColumna(c)] = org.valor(c); });
+    porGrupo.forEach(({ g, fechas }) => fechas.forEach((n, i) => g.campos.forEach(([c]) => {
+      bloque[i][indiceColumna(c)] = org.valor(columnaActividad(c, n));
+    })));
+    return bloque;
   }
 
   static #filaVacia() {

@@ -4,9 +4,9 @@ import { IconoSalir } from '../ui/Iconos';
 
 /**
  * Barra de navegación fija arriba, de lado a lado: nombre de la app, con qué usuario
- * se inició sesión y el botón para cerrar sesión.
+ * se inició sesión, "Historial de cambios" (solo administradores) y el botón para cerrar sesión.
  */
-export default function BarraSuperior({ modoLocal }) {
+export default function BarraSuperior({ modoLocal, onHistorial }) {
   const [correo, setCorreo] = useState('');
 
   useEffect(() => {
@@ -21,6 +21,10 @@ export default function BarraSuperior({ modoLocal }) {
         <div className="barra-superior__usuario">
           {modoLocal && <span className="etiqueta etiqueta--alerta">Modo local: solo este navegador</span>}
           {correo && <span className="barra-superior__correo" title="Sesión iniciada como">{correo}</span>}
+          {/* Solo llega cuando la persona es administradora: a las demás ni siquiera se les muestra */}
+          {onHistorial && (
+            <button type="button" className="barra-superior__salir" onClick={onHistorial}>Historial de cambios</button>
+          )}
           {authService.requiereLogin && (
             <button type="button" className="barra-superior__salir" onClick={() => authService.cerrarSesion()}>
               <IconoSalir /> Cerrar sesión

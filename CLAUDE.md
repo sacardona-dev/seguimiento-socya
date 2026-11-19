@@ -19,9 +19,29 @@ Ver `README.md` para instalar, configurar Supabase y publicar.
   franja de herramientas: va a la derecha del lugar actual y dice qué descarga ("Descargar Excel de
   Jaguas", "…del mes", "…de esta organización"), porque arriba se veía feo y no se entendía qué bajaba.
 - Formato de registros (Supabase y navegador): `{ [mes]: { [rowId]: { [col]: { v, src, autor?, fecha? } } } }`.
-- PENDIENTE DE CONFIRMAR con la usuaria: si se registra quién hizo cada cambio. Está preparado en
-  `supabase/autoria.sql` (trigger en la base de datos, nunca en la app) pero NO se ha corrido. La app
-  funciona con o sin esas columnas; si existen, muestra "Editado por ..." en cada campo.
+- Historial de cambios (pedido de la organización, nov. 2026): `supabase/historial.sql`. Triggers en
+  `registros` y `meses` anotan en la tabla `historial` quién, cuándo, valor antes y después (también
+  lo que se borra o se cambia directo en Supabase). Lo escribe SOLO la base de datos; la app no tiene
+  permiso de escribirlo. Solo lo LEEN los correos de la tabla `administradores` (función
+  `es_administrador()`); a los demás ni se les muestra el botón. Pantalla `HistorialCambios`: filtro por
+  rango de fechas (últimos 30 días por defecto), persona y buscador; solo consulta (no deshace cambios).
+  Varias personas editan el MISMO seguimiento: no hay uno por persona.
+- `supabase/autoria.sql` ("Editado por" en cada campo) sigue sin correrse; el historial lo reemplaza.
+- Varias fechas en un mes (pedido de la organización): todo subgrupo con columna de fecha es
+  `repetible` (esquemaExcel.js). La fecha 1 usa la columna del Excel (`Z`); las demás, `Z_2`… hasta
+  `MAX_ACTIVIDADES` = 5 (se pidió de 2 a 4, pero el Excel tiene un caso de 5 en junio). Así no se
+  cambió la tabla `registros`. En la ficha (`GrupoActividades`): una línea por fecha ("20/10/2026 · 7
+  participantes"), se abre con clic, solo una abierta a la vez; con una sola, viene abierta (elegido por
+  la usuaria: "muy extenso" si todas se ven abiertas). "＋ Agregar otra fecha" solo si las anteriores
+  tienen datos. "Quitar esta fecha" deja sus campos en blanco, con confirmación. El Excel descargado
+  vuelve a partir la fila en sub-filas con las demás columnas combinadas.
+- Las sub-filas del Excel original (filas sin vigencia dentro de una organización combinada) se pasaron
+  a `meses.json` como `Z_2`… (113 fechas, abril a octubre). Algunas fechas traen errores de digitación
+  del Excel ("13/082026"); se dejaron igual y la app pide corregirlas.
+- Informes de visita: se suben de 1 a 3 a la vez (`LoteInformes`), de la MISMA organización y mes (si
+  no, error). Cada informe ocupa su propia fecha en el subgrupo destino (si ya existe esa fecha, la
+  actualiza). Las observaciones de todos se JUNTAN ordenadas por fecha en un cuadro editable antes de
+  guardar (sin IA: se decidió empezar así; con IA haría falta servidor, costo y autorización de Socya).
 - Las 7 filas finales de cada hoja del Excel son listas de apoyo de los desplegables, no organizaciones.
   `Mes` las descarta porque no tienen vigencia (columna C). Toda organización real tiene vigencia.
 - Tabla `registros` con llave `(mes, row_id, col)`. No cambiar sin migrar los datos existentes.
@@ -37,19 +57,9 @@ Ver `README.md` para instalar, configurar Supabase y publicar.
 - Crear/cambiar contraseña (pantalla NuevaContrasena): mínimo 8 caracteres, una mayúscula y un número,
   validado antes de enviar (`utils/contrasena.js`). El login NO valida esas reglas.
 
-- Reuniones de equipo: las del Excel (33, feb–sep 2026) viven en `meses.json`; las nuevas se registran
-  desde la app en la tabla `reuniones`. Solo quien registró una reunión puede editarla o borrarla
-  (política RLS con `creado_por = auth.uid()`; la app solo muestra los botones a esa persona). Las del
-  Excel no se editan. Las tarjetas se muestran de 5 en 5 con paginación (componente `ui/Paginacion`);
-  la usuaria lo pidió para que no sea una fila larga. Cambiar de página o de filtro NO devuelve a la página 1 ni
-  mueve la pantalla, y al salir de la pestaña y volver se conserva página y filtros (estado en Panel). El filtro "Ver" tiene sus
-  PROPIOS meses (los que tienen reuniones, + "Todas las fechas"), independiente de los meses de las
-  organizaciones; por defecto, el mes elegido en Organizaciones si tiene reuniones, si no el más reciente.
-  En la pestaña Reuniones NO se muestra la franja de arriba (Mes, Agregar mes, Subir informe): son de las
-  organizaciones. Filtro por central. Sin botón de
-  descargar Excel de reuniones ni cifras de resumen arriba (la usuaria los pidió quitar). El mes de una
-  reunión del Excel se toma del final de su fecha ("21, 22, 23 /04/2026" → abril 2026). Versión anterior
-  (tabla de solo lectura) guardada en la etiqueta de git `antes-de-reuniones`.
+- La app es SOLO de organizaciones. La sección "Reuniones de equipo" se eliminó por completo (pantalla,
+  código, datos de `meses.json` y SQL) por pedido de quienes revisaron la app (nov. 2026). No volver a
+  agregarla sin que lo pidan. La versión que la tenía está en el historial de git (commit e070363).
 
 ## Arquitectura (dónde va cada cosa)
 
@@ -57,15 +67,15 @@ Ver `README.md` para instalar, configurar Supabase y publicar.
 src/
   config/      constantes y conexión: esquemaExcel.js (columnas, secciones, opciones), supabaseClient.js
   domain/      CLASES con reglas de negocio, sin React ni Supabase: Mes, Organizacion, InformeVisita,
-               Reunion, CorrectorOrtografia
+               CorrectorOrtografia, LoteInformes, CambioHistorial
   services/    CLASES que hablan con el exterior: repositorios, AuthService, LectorPdf, ExportadorExcel
                index.js crea UNA instancia de cada servicio; todo se importa desde ahí
-  hooks/       estado de React reutilizable: useSesion, useRegistros, useMeses, useReuniones, useNavegacion
+  hooks/       estado de React reutilizable: useSesion, useRegistros, useMeses, useNavegacion,
+               useAdministrador, useHistorial
   components/
     ui/        piezas genéricas sin lógica de negocio: Boton, BotonVolver, Modal, Aviso...
     layout/    estructura de página: BarraSuperior (navbar), Encabezado (herramientas de trabajo)
-    <tema>/    piezas de una funcionalidad: seguimiento/, informe/, reuniones/ (VistaReuniones, TarjetaReunion,
-               FormularioReunion), meses/
+    <tema>/    piezas de una funcionalidad: seguimiento/, informe/, meses/, historial/
   pages/       pantallas completas: Login, NuevaContrasena, Panel
   styles/      tokens.css (colores/espacios), base.css (HTML suelto), componentes.css (clases)
   utils/       funciones puras pequeñas: texto.js, columnas.js, fechas.js, contrasena.js
@@ -126,7 +136,7 @@ contraste AA.
 
 - Se corrige al CARGAR, en `src/domain/CorrectorOrtografia.js` (un solo lugar con todas las reglas); el
   `meses.json` conserva lo que trae el Excel. Aplica a todos los meses (también los agregados desde la
-  app), a los cambios guardados en listas (ej. "Si" → "Sí") y a las reuniones de equipo.
+  app) y a los cambios guardados en listas (ej. "Si" → "Sí").
 - Criterio RAE: nombres propios (centrales, municipios, organizaciones, módulos, líneas de inversión)
   con mayúscula en palabras importantes; valores comunes de listas solo con mayúscula inicial
   ("En riesgo"); tildes ("Sí", "Río", "Chucurí"); sin espacios dobles; "N.º" y no "No." para número.
@@ -148,5 +158,6 @@ contraste AA.
 - Mapeo "Acompañamiento Social" → sección E es provisional; confirmar lista real de tipos de intervención.
 - Acciones realizadas y recomendaciones van juntas a Observaciones; confirmar destino.
 - Por confirmar con la organización: Excel con el formato oficial (encabezados combinados y colores)
-  para enviar a ISAGEN; roles (¿hay personas que solo consultan?); si se registra quién hizo cada cambio.
+  para enviar a ISAGEN; roles (¿hay personas que solo consultan?); correos de los administradores.
+- Resumen de varios informes con IA: solo si Socya lo autoriza (sale información a un servicio externo).
 - `meses.json` (~1 MB) va dentro del paquete principal. Si crece, cargarlo con `import()`.

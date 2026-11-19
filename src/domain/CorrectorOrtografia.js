@@ -1,4 +1,5 @@
 import { normalizar } from '../utils/texto';
+import { columnaBase } from '../utils/columnas';
 
 /**
  * Corrige la ortografía de los datos que vienen del Excel al cargarlos, sin tocar el archivo original.
@@ -59,23 +60,6 @@ export class CorrectorOrtografia {
   // Columnas de nombres propios donde se corrigen palabras sueltas
   static #NOMBRES_PROPIOS = ['A', 'B', 'D'];
 
-  // Correcciones de la tabla de reuniones de equipo (por campo)
-  static #REUNIONES = {
-    municipio: { 'vodeoconferencia': 'Videoconferencia' },
-    isagen: { 'no': 'No', 'si': 'Sí', 'sin acompanamiento': 'No', 'con acompanamiento': 'Sí' },
-  };
-
-  /** Devuelve una copia de la reunión con la ortografía corregida. */
-  static corregirReunion(reunion) {
-    const corregida = { ...reunion };
-    for (const [campo, valor] of Object.entries(reunion)) {
-      if (typeof valor !== 'string') continue;
-      const limpio = CorrectorOrtografia.#limpiarEspacios(valor);
-      corregida[campo] = CorrectorOrtografia.#REUNIONES[campo]?.[normalizar(limpio)] ?? limpio;
-    }
-    return corregida;
-  }
-
   /** Devuelve una copia de la fila con la ortografía corregida. */
   static corregirFila(fila) {
     const corregida = { ...fila };
@@ -86,7 +70,8 @@ export class CorrectorOrtografia {
   }
 
   /** Corrige un valor de una columna. Si no hay nada que corregir, lo devuelve igual (solo sin espacios de más). */
-  static corregir(col, valor) {
+  static corregir(columna, valor) {
+    const col = columnaBase(columna); // "AC_2" (segunda fecha) se corrige igual que "AC"
     let texto = CorrectorOrtografia.#limpiarEspacios(valor);
     const exacta = CorrectorOrtografia.#POR_COLUMNA[col]?.[normalizar(texto)];
     if (exacta) return exacta;

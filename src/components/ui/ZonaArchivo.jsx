@@ -1,12 +1,15 @@
 import { useState } from 'react';
 
-/** Zona para soltar un archivo o hacer clic y elegirlo. */
-export default function ZonaArchivo({ accept, ocupado, textoOcupado, onArchivo }) {
+/**
+ * Zona para soltar archivos o hacer clic y elegirlos (uno o varios a la vez).
+ * Siempre entrega una lista: onArchivos([archivo, ...]).
+ */
+export default function ZonaArchivo({ accept, multiple = false, ocupado, textoOcupado, texto, onArchivos }) {
   const [encima, setEncima] = useState(false);
 
-  const tomar = archivos => {
-    const archivo = archivos?.[0];
-    if (archivo && !ocupado) onArchivo(archivo);
+  const tomar = lista => {
+    const archivos = [...(lista ?? [])];
+    if (archivos.length && !ocupado) onArchivos(multiple ? archivos : archivos.slice(0, 1));
   };
 
   return (
@@ -19,6 +22,7 @@ export default function ZonaArchivo({ accept, ocupado, textoOcupado, onArchivo }
       <input
         type="file"
         accept={accept}
+        multiple={multiple}
         className="oculto-visual"
         disabled={ocupado}
         onChange={e => { tomar(e.target.files); e.target.value = ''; }}
@@ -27,8 +31,8 @@ export default function ZonaArchivo({ accept, ocupado, textoOcupado, onArchivo }
         <strong>{textoOcupado}</strong>
       ) : (
         <>
-          <strong>Arrastra aquí el PDF del informe</strong>
-          <span className="texto-suave">o haz clic para elegirlo</span>
+          <strong>{texto}</strong>
+          <span className="texto-suave">o haz clic para {multiple ? 'elegirlos' : 'elegirlo'}</span>
         </>
       )}
     </label>

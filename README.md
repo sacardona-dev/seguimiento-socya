@@ -19,6 +19,10 @@ Abre el enlace que aparece (normalmente http://localhost:5173). Sin configurar S
 4. En **Project Settings > API** copia la URL y la clave `anon public`.
 5. Copia `.env.example` como `.env` y pega esos dos valores.
 6. Reinicia `npm run dev`. Ahora aparece la pantalla de inicio de sesión.
+7. **Historial de cambios** (quién cambió qué y cuándo): en **SQL Editor** corre `supabase/historial.sql`.
+   Luego agrega a cada administrador con su correo en minúscula:
+   `insert into administradores (correo) values ('correo@socya.org.co') on conflict do nothing;`
+   Solo a ellos les aparece el botón "Historial de cambios" en la barra de arriba.
 
 ## 3. Publicar en internet (Vercel)
 
@@ -40,7 +44,7 @@ Abre el enlace que aparece (normalmente http://localhost:5173). Sin configurar S
 - `src/hooks/`: estado de React reutilizable (sesión, registros, navegación).
 - `src/components/` y `src/pages/`: pantallas y componentes.
 - `src/styles/`: colores y tipografía de Socya (`tokens.css`) y estilos.
-- `src/data/meses.json`: datos del Excel por mes (abril a octubre 2026) y reuniones de equipo.
+- `src/data/meses.json`: datos del Excel por mes (abril a octubre 2026).
 
 Las reglas de organización, POO y leyes UX están en `CLAUDE.md`.
 

@@ -1,5 +1,6 @@
 import { DATOS, SECCIONES } from '../../config/esquemaExcel';
 import CampoEditable from './CampoEditable';
+import GrupoActividades from './GrupoActividades';
 
 /**
  * Todos los campos de una organización en un mes, agrupados por sección y subgrupo,
@@ -49,7 +50,18 @@ export default function FichaOrganizacion({ mes, organizacion, onEditar }) {
                 g.nombre ? (
                   <fieldset className="grupo" key={i}>
                     <legend className="grupo__titulo">{g.nombre}</legend>
-                    <div className="seccion__cuerpo">{campos(g.campos)}</div>
+                    {g.repetible ? (
+                      // key con mes y organización: al cambiar de ficha se cierran las fechas abiertas
+                      <GrupoActividades
+                        key={`${mes.clave}-${organizacion.id}`}
+                        grupo={g}
+                        mes={mes}
+                        organizacion={organizacion}
+                        onEditar={onEditar}
+                      />
+                    ) : (
+                      <div className="seccion__cuerpo">{campos(g.campos)}</div>
+                    )}
                   </fieldset>
                 ) : (
                   <div className="seccion__cuerpo" key={i}>{campos(g.campos)}</div>

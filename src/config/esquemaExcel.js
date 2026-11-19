@@ -19,6 +19,16 @@ export const DATOS = [
   ['E', 'Tipo (J.A.C., asociación, otra)'],
 ];
 
+// Columnas de fecha: se muestran con selector de fecha y se guardan como dd/mm/aaaa
+export const FECHAS = ['K', 'N', 'Q', 'T', 'W', 'Z', 'AD', 'AJ', 'AM', 'AQ'];
+
+// Columnas numéricas: solo aceptan números (participantes y duración en meses)
+export const NUMEROS = ['J', 'L', 'O', 'R', 'U', 'X', 'AA', 'AE', 'AK', 'AN', 'AR'];
+
+// Máximo de fechas de un mismo subgrupo en un mes. Se pidió de 2 a 4, pero el Excel ya tiene
+// una organización con 5 (junio), así que se deja en 5 para no perder ese dato.
+export const MAX_ACTIVIDADES = 5;
+
 // Secciones en el mismo orden y con los mismos nombres que los grupos del Excel.
 // Cada sección tiene subgrupos (ej. "1. Talleres…", "2. Comité técnico…") como en el encabezado del Excel.
 // Campo: [columna, etiqueta, ayuda opcional]. Grupo sin nombre (null) = la sección no tiene subgrupos.
@@ -26,7 +36,9 @@ const seccion = (id, nombre, grupos) => ({
   id, nombre, grupos,
   campos: grupos.flatMap(g => g.campos), // lista plana, para contar avance y exportar
 });
-const grupo = (nombre, campos) => ({ nombre, campos });
+// Un subgrupo con fecha puede repetirse en el mes: en el Excel la fila de la organización se parte
+// en sub-filas, una por fecha. Las fechas 2, 3… se guardan en "Z_2", "Z_3"… (utils/columnas.js).
+const grupo = (nombre, campos) => ({ nombre, campos, repetible: campos.some(([c]) => FECHAS.includes(c)) });
 
 export const SECCIONES = [
   seccion('A', 'A. Escuela de desarrollo comunitario', [
@@ -123,6 +135,9 @@ export const SECCIONES = [
   ]),
 ];
 
+// Subgrupos que pueden tener varias fechas en el mes (todos los que tienen una columna de fecha)
+export const GRUPOS_REPETIBLES = SECCIONES.flatMap(s => s.grupos).filter(g => g.repetible);
+
 // Columnas que se copian al abrir un mes nuevo (en los datos reales se repiten de un mes a otro
 // en más del 85 % de los casos): organización, módulo de escuela, proyecto y resultados ICO.
 // Todo lo demás (fechas, participantes, resúmenes, observaciones) empieza en blanco.
@@ -141,12 +156,6 @@ export const OPCIONES = {
 // Columnas de texto largo
 export const AREAS = ['M', 'P', 'S', 'V', 'Y', 'AB', 'AF', 'AU'];
 
-// Columnas numéricas: solo aceptan números (participantes y duración en meses)
-export const NUMEROS = ['J', 'L', 'O', 'R', 'U', 'X', 'AA', 'AE', 'AK', 'AN', 'AR'];
-
-// Columnas de fecha: se muestran con selector de fecha y se guardan como dd/mm/aaaa
-export const FECHAS = ['K', 'N', 'Q', 'T', 'W', 'Z', 'AD', 'AJ', 'AM', 'AQ'];
-
 // Dónde cae cada dato del informe de visita (PDF) dentro del Excel
 export const DESTINO_INFORME = {
   tipoAsesoria: ['AP', 'Tipo de asesoría'],
@@ -162,6 +171,20 @@ export const ETIQUETAS_EXCEL_FIJAS = {
   E: 'Tipo',
 };
 // (Las demás columnas toman su encabezado de SECCIONES.)
+
+// Nombre legible de cada columna, con su subgrupo ("3. Capacitación… · Fecha")
+const ETIQUETAS_COLUMNA = {
+  ...ETIQUETAS_EXCEL_FIJAS,
+  ...Object.fromEntries(SECCIONES.flatMap(s => s.grupos.flatMap(g =>
+    g.campos.map(([c, l]) => [c, g.nombre ? `${g.nombre} · ${l}` : l])))),
+};
+
+/** Nombre de una columna para mostrar (ej. en el historial). "Z_2" → "… · Fecha (fecha 2)". */
+export function etiquetaDeColumna(col) {
+  const [base, n] = String(col).split('_');
+  const etiqueta = ETIQUETAS_COLUMNA[base] ?? base;
+  return n ? `${etiqueta} (fecha ${n})` : etiqueta;
+}
 
 // Cuántas columnas tiene la hoja mensual (A..AU)
 export const ANCHO_HOJA = 47;

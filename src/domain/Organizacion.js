@@ -1,5 +1,8 @@
-import { COL } from '../config/esquemaExcel';
+import { COL, MAX_ACTIVIDADES } from '../config/esquemaExcel';
+import { columnaActividad } from '../utils/columnas';
 import { estaVacio } from '../utils/texto';
+
+const NUMEROS_ACTIVIDAD = Array.from({ length: MAX_ACTIVIDADES }, (_, i) => i + 1); // [1, 2, 3, 4, 5]
 
 /**
  * Una organización dentro de un mes.
@@ -32,6 +35,11 @@ export class Organizacion {
     return cambio ? cambio.v : (this.#fila[col] ?? '');
   }
 
+  /** Valor que traía el Excel, sin los cambios del equipo (para el historial: "antes" del primer cambio). */
+  valorOriginal(col) {
+    return this.#fila[col] ?? '';
+  }
+
   /** De dónde salió el valor: 'pdf', 'manual' o null si es el original del Excel. */
   origen(col) {
     return this.#cambios[col]?.src ?? null;
@@ -43,9 +51,19 @@ export class Organizacion {
     return c?.autor ? { autor: c.autor, fecha: c.fecha } : null;
   }
 
-  /** Cuántos campos de una sección tienen dato. */
+  /**
+   * Fechas (1, 2, 3…) que tiene un subgrupo repetible en el mes: las que tienen algún dato.
+   * Ej. capacitación el 20/10 y el 26/10 → [1, 2]. Sin datos → [].
+   */
+  actividades(grupo) {
+    return NUMEROS_ACTIVIDAD.filter(n =>
+      grupo.campos.some(([col]) => !estaVacio(this.valor(columnaActividad(col, n)))));
+  }
+
+  /** Cuántos campos de una sección tienen dato (en cualquiera de sus fechas). */
   avanceSeccion(seccion) {
-    const llenos = seccion.campos.filter(([col]) => !estaVacio(this.valor(col))).length;
+    const llenos = seccion.campos.filter(([col]) =>
+      NUMEROS_ACTIVIDAD.some(n => !estaVacio(this.valor(columnaActividad(col, n))))).length;
     return { llenos, total: seccion.campos.length };
   }
 }

@@ -3,17 +3,17 @@ import { exportadorExcel } from '../services';
 import { useMeses } from '../hooks/useMeses';
 import { useNavegacion } from '../hooks/useNavegacion';
 import { useRegistros } from '../hooks/useRegistros';
+import { useAdministrador } from '../hooks/useAdministrador';
+import HistorialCambios from '../components/historial/HistorialCambios';
 import Encabezado from '../components/layout/Encabezado';
 import BarraSuperior from '../components/layout/BarraSuperior';
 import BotonVolver from '../components/ui/BotonVolver';
 import { IconoDescargar } from '../components/ui/Iconos';
 import Aviso from '../components/ui/Aviso';
-import Pestanas from '../components/ui/Pestanas';
 import TarjetasGrupo from '../components/seguimiento/TarjetasGrupo';
 import TablaOrganizaciones from '../components/seguimiento/TablaOrganizaciones';
 import FichaOrganizacion from '../components/seguimiento/FichaOrganizacion';
 import ImportarInforme from '../components/informe/ImportarInforme';
-import VistaReuniones from '../components/reuniones/VistaReuniones';
 import AbrirMesNuevo from '../components/meses/AbrirMesNuevo';
 import BuscadorOrganizaciones from '../components/seguimiento/BuscadorOrganizaciones';
 import ResumenMes from '../components/seguimiento/ResumenMes';
@@ -29,8 +29,8 @@ export default function Panel() {
   const [importando, setImportando] = useState(false);
   const [abriendoMes, setAbriendoMes] = useState(false);
   const [exito, setExito] = useState('');
-  // Filtros y página de Reuniones: viven aquí para que no se pierdan al cambiar de pestaña
-  const [filtrosReuniones, setFiltrosReuniones] = useState({ periodo: null, central: '', pagina: 1 });
+  const esAdministrador = useAdministrador();
+  const [viendoHistorial, setViendoHistorial] = useState(false);
 
   const mes = meses.find(m => m.clave === claveMes) ?? meses.at(-1);
   const organizacion = nav.orgId !== null ? mes.buscarPorId(nav.orgId) : null;
@@ -62,37 +62,42 @@ export default function Panel() {
     setExito(`Descargamos ${organizaciones.length} ${organizaciones.length === 1 ? 'organización' : 'organizaciones'} de ${donde} (${mes.label}).`);
   }
 
-  function guardarInforme(mesDestino, org, cambios) {
+  function guardarInforme(mesDestino, org, cambios, cantidadInformes = 1) {
     cambios.forEach(c => editar(mesDestino.clave, org.id, c.col, c.val, 'pdf'));
     setClaveMes(mesDestino.clave);
     nav.abrirOrganizacion(org);
     setImportando(false);
-    setExito(`Guardamos ${cambios.length} ${cambios.length === 1 ? 'campo' : 'campos'} del informe en ${org.nombre} (${mesDestino.label}).`);
+    const deDonde = cantidadInformes === 1 ? 'del informe' : `de ${cantidadInformes} informes`;
+    setExito(`Guardamos ${cambios.length} ${cambios.length === 1 ? 'campo' : 'campos'} ${deDonde} en ${org.nombre} (${mesDestino.label}).`);
+  }
+
+  const barra = (
+    <BarraSuperior
+      modoLocal={!compartido}
+      onHistorial={esAdministrador && !viendoHistorial ? () => setViendoHistorial(true) : null}
+    />
+  );
+
+  if (viendoHistorial) {
+    return (
+      <>
+        {barra}
+        <div className="app"><HistorialCambios meses={meses} onVolver={() => setViendoHistorial(false)} /></div>
+      </>
+    );
   }
 
   return (
     <>
-    <BarraSuperior modoLocal={!compartido} />
+    {barra}
     <div className="app">
-      {/* Mes, Agregar mes y Subir informe son de las organizaciones: en Reuniones no se muestran */}
-      {nav.nivel !== 'reuniones' && (
-        <Encabezado
-          meses={meses}
-          mesActual={mes}
-          onCambiarMes={cambiarMes}
-          onAgregarMes={mesSiguiente ? () => setAbriendoMes(true) : null}
-          onSubirInforme={() => setImportando(true)}
-          estadoGuardado={estadoGuardado}
-        />
-      )}
-
-      <Pestanas
-        valor={nav.nivel === 'reuniones' ? 'reuniones' : 'organizaciones'}
-        onCambiar={v => (v === 'reuniones' ? nav.verReuniones() : nav.irAInicio())}
-        opciones={[
-          { valor: 'organizaciones', texto: 'Organizaciones' },
-          { valor: 'reuniones', texto: 'Reuniones de equipo' },
-        ]}
+      <Encabezado
+        meses={meses}
+        mesActual={mes}
+        onCambiarMes={cambiarMes}
+        onAgregarMes={mesSiguiente ? () => setAbriendoMes(true) : null}
+        onSubirInforme={() => setImportando(true)}
+        estadoGuardado={estadoGuardado}
       />
 
       {errorCarga && <Aviso tipo="error">{errorCarga}</Aviso>}
@@ -100,44 +105,32 @@ export default function Panel() {
       {exito && <Aviso tipo="exito" onCerrar={() => setExito('')}>{exito}</Aviso>}
 
       <main>
-        {nav.nivel === 'reuniones' ? (
-          <VistaReuniones
+        <BuscadorOrganizaciones mes={mes} onElegir={nav.abrirOrganizacion} />
+        {nav.nivel === 'centrales' && <ResumenMes mes={mes} />}
+        <div className="barra-navegacion">
+          <div className="barra-navegacion__ruta">
+            {pasos.length > 1 && <BotonVolver destino={pasos.at(-2).texto} onClick={pasos.at(-2).onClick} />}
+            <h2 className="barra-navegacion__lugar">{pasos.at(-1).texto}</h2>
+          </div>
+          <button type="button" className="boton-descargar" onClick={descargarExcel}>
+            <IconoDescargar /> {textoDescarga(nav, organizacion)}
+          </button>
+        </div>
+        {nav.nivel === 'centrales' && (
+          <TarjetasGrupo grupos={mes.centrales()} textoSinNombre="Sin central" onElegir={nav.elegirCentral} />
+        )}
+        {nav.nivel === 'municipios' && (
+          <TarjetasGrupo grupos={mes.municipios(nav.central)} textoSinNombre="Sin municipio" onElegir={nav.elegirMunicipio} />
+        )}
+        {nav.nivel === 'organizaciones' && (
+          <TablaOrganizaciones organizaciones={mes.organizacionesDe(nav.central, nav.municipio)} onElegir={nav.abrirOrganizacion} />
+        )}
+        {nav.nivel === 'organizacion' && organizacion && (
+          <FichaOrganizacion
             mes={mes}
-            lugaresSugeridos={lugaresSugeridos(mes)}
-            filtros={filtrosReuniones}
-            onCambiarFiltros={setFiltrosReuniones}
-            onExito={setExito}
+            organizacion={organizacion}
+            onEditar={(col, valor) => editar(mes.clave, organizacion.id, col, valor)}
           />
-        ) : (
-          <>
-            <BuscadorOrganizaciones mes={mes} onElegir={nav.abrirOrganizacion} />
-            {nav.nivel === 'centrales' && <ResumenMes mes={mes} />}
-            <div className="barra-navegacion">
-              <div className="barra-navegacion__ruta">
-                {pasos.length > 1 && <BotonVolver destino={pasos.at(-2).texto} onClick={pasos.at(-2).onClick} />}
-                <h2 className="barra-navegacion__lugar">{pasos.at(-1).texto}</h2>
-              </div>
-              <button type="button" className="boton-descargar" onClick={descargarExcel}>
-                <IconoDescargar /> {textoDescarga(nav, organizacion)}
-              </button>
-            </div>
-            {nav.nivel === 'centrales' && (
-              <TarjetasGrupo grupos={mes.centrales()} textoSinNombre="Sin central" onElegir={nav.elegirCentral} />
-            )}
-            {nav.nivel === 'municipios' && (
-              <TarjetasGrupo grupos={mes.municipios(nav.central)} textoSinNombre="Sin municipio" onElegir={nav.elegirMunicipio} />
-            )}
-            {nav.nivel === 'organizaciones' && (
-              <TablaOrganizaciones organizaciones={mes.organizacionesDe(nav.central, nav.municipio)} onElegir={nav.abrirOrganizacion} />
-            )}
-            {nav.nivel === 'organizacion' && organizacion && (
-              <FichaOrganizacion
-                mes={mes}
-                organizacion={organizacion}
-                onEditar={(col, valor) => editar(mes.clave, organizacion.id, col, valor)}
-              />
-            )}
-          </>
         )}
       </main>
 
@@ -151,11 +144,6 @@ export default function Panel() {
     </div>
     </>
   );
-}
-
-/** Lugares que sugiere el formulario de reuniones: los municipios del mes y la opción virtual. */
-function lugaresSugeridos(mes) {
-  return [...new Set(mes.organizaciones.map(o => o.municipio).filter(Boolean)), 'Videoconferencia'].sort();
 }
 
 /** Dice exactamente qué baja el botón, según dónde está la persona. */

@@ -1,10 +1,10 @@
 import { RepositorioRegistros } from './RepositorioRegistros';
 
-/** Guarda en Supabase (tablas `registros`, `meses` y `reuniones`). Lo ve todo el equipo, en vivo. */
+/** Guarda en Supabase (tablas `registros` y `meses`). Lo ve todo el equipo, en vivo. */
 export class RepositorioSupabase extends RepositorioRegistros {
   static TABLA = 'registros';
   static TABLA_MESES = 'meses';
-  static TABLA_REUNIONES = 'reuniones';
+  static TABLA_HISTORIAL = 'historial';
   #cliente;
 
   constructor(cliente) {
@@ -48,34 +48,27 @@ export class RepositorioSupabase extends RepositorioRegistros {
     if (error) throw error;
   }
 
-  async cargarReuniones() {
-    const { data, error } = await this.#cliente.from(RepositorioSupabase.TABLA_REUNIONES).select('*');
+  /** Lo decide la base de datos (tabla `administradores`, supabase/historial.sql). Si aún no existe, no. */
+  async esAdministrador() {
+    const { data, error } = await this.#cliente.rpc('es_administrador');
+    return !error && data === true;
+  }
+
+  async cargarHistorial({ desde, hasta, limite = 2000 }) {
+    const finDelDia = new Date(`${hasta}T00:00:00`);
+    finDelDia.setDate(finDelDia.getDate() + 1);
+    const { data, error } = await this.#cliente
+      .from(RepositorioSupabase.TABLA_HISTORIAL)
+      .select('*')
+      .gte('fecha', new Date(`${desde}T00:00:00`).toISOString())
+      .lt('fecha', finDelDia.toISOString())
+      .order('fecha', { ascending: false })
+      .limit(limite);
     if (error) throw error;
     return data;
   }
 
-  async guardarReunion(reunion) {
-    const { data, error } = await this.#cliente.from(RepositorioSupabase.TABLA_REUNIONES)
-      .insert(reunion).select().single();
-    if (error) throw error;
-    return data;
-  }
-
-  async actualizarReunion(id, cambios) {
-    const { data, error } = await this.#cliente.from(RepositorioSupabase.TABLA_REUNIONES)
-      .update(cambios).eq('id', id).select().single();
-    if (error) throw error; // también falla si no es de quien la registró (la base de datos no la deja cambiar)
-    return data;
-  }
-
-  async borrarReunion(id) {
-    const { data, error } = await this.#cliente.from(RepositorioSupabase.TABLA_REUNIONES)
-      .delete().eq('id', id).select();
-    if (error) throw error;
-    if (!data.length) throw new Error('No se borró: la reunión no existe o no la registraste tú.');
-  }
-
-  escuchar({ alCambiarCampo, alCrearMes, alCrearReunion, alCambiarReunion, alBorrarReunion }) {
+  escuchar({ alCambiarCampo, alCrearMes }) {
     const canal = this.#cliente.channel(`seguimiento-${Math.random().toString(36).slice(2)}`); // nombre único por conexión
     if (alCambiarCampo) {
       canal.on('postgres_changes', { event: '*', schema: 'public', table: RepositorioSupabase.TABLA },
@@ -84,18 +77,6 @@ export class RepositorioSupabase extends RepositorioRegistros {
     if (alCrearMes) {
       canal.on('postgres_changes', { event: 'INSERT', schema: 'public', table: RepositorioSupabase.TABLA_MESES },
         ({ new: fila }) => alCrearMes(RepositorioSupabase.#aMes(fila)));
-    }
-    if (alCrearReunion) {
-      canal.on('postgres_changes', { event: 'INSERT', schema: 'public', table: RepositorioSupabase.TABLA_REUNIONES },
-        ({ new: fila }) => alCrearReunion(fila));
-    }
-    if (alCambiarReunion) {
-      canal.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: RepositorioSupabase.TABLA_REUNIONES },
-        ({ new: fila }) => alCambiarReunion(fila));
-    }
-    if (alBorrarReunion) {
-      canal.on('postgres_changes', { event: 'DELETE', schema: 'public', table: RepositorioSupabase.TABLA_REUNIONES },
-        ({ old: fila }) => { if (fila?.id) alBorrarReunion(fila.id); });
     }
     canal.subscribe();
     return () => { this.#cliente.removeChannel(canal); };

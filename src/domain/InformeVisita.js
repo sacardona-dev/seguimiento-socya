@@ -1,4 +1,5 @@
 import { COL, DESTINO_INFORME } from '../config/esquemaExcel';
+import { columnaActividad } from '../utils/columnas';
 import { claveNombre } from '../utils/texto';
 
 /**
@@ -52,17 +53,16 @@ export class InformeVisita {
   }
 
   /**
-   * Arma la lista de cambios para una organización, sin guardar nada.
+   * Campos de la actividad del informe, guardados en la fecha número `n` del subgrupo
+   * (1 = la columna del Excel; 2, 3… = sub-filas). Sin guardar nada.
    * @returns {{ cambios: {col, etiqueta, val, nota?}[], no: string[] }}
    */
-  planearCambios(organizacion) {
+  cambiosDeActividad(n) {
     const cambios = [];
     const no = [];
-    const agregar = ([col, etiqueta], val, nota) => { if (val) cambios.push({ col, etiqueta, val, nota }); };
-
-    // Central y municipio solo se completan si estaban vacíos
-    if (!organizacion.central) agregar([COL.CENTRAL, 'Central'], this.central);
-    if (!organizacion.municipio) agregar([COL.MUNICIPIO, 'Municipio'], this.municipio);
+    const agregar = ([col, etiqueta], val, nota) => {
+      if (val) cambios.push({ col: columnaActividad(col, n), etiqueta: `${etiqueta} (${this.fecha})`, val, nota });
+    };
 
     if (this.esAcompanamientoSocial()) {
       agregar(DESTINO_INFORME.tipoAsesoria, this.tipo, 'Acompañamiento social → sección E');
@@ -70,17 +70,27 @@ export class InformeVisita {
       agregar(DESTINO_INFORME.participantes, this.asistentes);
       agregar(DESTINO_INFORME.medio, this.medio);
     } else if (this.tipo) {
-      no.push(`Tipo de intervención "${this.tipo}": sin sección asignada, no se guarda`);
+      no.push(`Informe del ${this.fecha}: tipo de intervención "${this.tipo}" sin sección asignada, no se guarda`);
     }
-
-    const observaciones = [];
-    if (this.acciones) observaciones.push('Acciones: ' + this.acciones);
-    if (this.recomendaciones) observaciones.push('Recomendaciones y compromisos: ' + this.recomendaciones);
-    if (observaciones.length) {
-      agregar(DESTINO_INFORME.observaciones, observaciones.join('\n'), 'Acciones y recomendaciones juntas: confirmar destino');
-    }
-
-    no.push('Lugar, responsable, cargo, objetivos y situación encontrada: no tienen columna en el Excel');
     return { cambios, no };
+  }
+
+  /** Central y municipio del informe, solo si la organización no los tiene. */
+  cambiosDeUbicacion(organizacion) {
+    const cambios = [];
+    if (!organizacion.central && this.central) cambios.push({ col: COL.CENTRAL, etiqueta: 'Central', val: this.central });
+    if (!organizacion.municipio && this.municipio) cambios.push({ col: COL.MUNICIPIO, etiqueta: 'Municipio', val: this.municipio });
+    return cambios;
+  }
+
+  /**
+   * Observaciones del informe con su fecha al inicio, para el resumen de varios informes.
+   * Acciones y recomendaciones van juntas (destino por confirmar con la organización).
+   */
+  textoObservaciones() {
+    const partes = [];
+    if (this.acciones) partes.push('Acciones: ' + this.acciones);
+    if (this.recomendaciones) partes.push('Recomendaciones y compromisos: ' + this.recomendaciones);
+    return partes.length ? `${this.fecha || 'Sin fecha'}\n${partes.join('\n')}` : '';
   }
 }
