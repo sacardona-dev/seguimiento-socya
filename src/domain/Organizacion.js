@@ -1,5 +1,6 @@
-import { COL, MAX_ACTIVIDADES } from '../config/esquemaExcel';
+import { COL, COLUMNAS_POR_FECHA, GRUPOS_CON_FECHA, MAX_ACTIVIDADES } from '../config/esquemaExcel';
 import { columnaActividad } from '../utils/columnas';
+import { excelAIso } from '../utils/fechas';
 import { estaVacio } from '../utils/texto';
 
 const NUMEROS_ACTIVIDAD = Array.from({ length: MAX_ACTIVIDADES }, (_, i) => i + 1); // [1, 2, 3, 4, 5]
@@ -52,18 +53,52 @@ export class Organizacion {
   }
 
   /**
-   * Fechas (1, 2, 3…) que tiene un subgrupo repetible en el mes: las que tienen algún dato.
-   * Ej. capacitación el 20/10 y el 26/10 → [1, 2]. Sin datos → [].
+   * Dónde se guarda una columna en la fecha n. Cada fecha tiene su propia información ("Z", "Z_2"…),
+   * menos los datos generales y las columnas de la organización, que son uno solo para todas las fechas.
    */
-  actividades(grupo) {
-    return NUMEROS_ACTIVIDAD.filter(n =>
-      grupo.campos.some(([col]) => !estaVacio(this.valor(columnaActividad(col, n)))));
+  static columnaEnFecha(col, n) {
+    return COLUMNAS_POR_FECHA.includes(col) ? columnaActividad(col, n) : col;
   }
 
-  /** Cuántos campos de una sección tienen dato (en cualquiera de sus fechas). */
-  avanceSeccion(seccion) {
-    const llenos = seccion.campos.filter(([col]) =>
-      NUMEROS_ACTIVIDAD.some(n => !estaVacio(this.valor(columnaActividad(col, n))))).length;
+  /** Días escritos en la fecha n (de cualquier actividad), sin repetir. Ej. ['20/10/2026']. */
+  diasDeFecha(n) {
+    return [...new Set(GRUPOS_CON_FECHA
+      .map(g => String(this.valor(columnaActividad(g.colFecha, n)) ?? '').trim())
+      .filter(Boolean))];
+  }
+
+  /** Actividades que tienen día escrito en la fecha n (para el texto pequeño de la pestaña). */
+  actividadesDeFecha(n) {
+    return GRUPOS_CON_FECHA.filter(g => !estaVacio(this.valor(columnaActividad(g.colFecha, n))));
+  }
+
+  /**
+   * Fechas (1, 2, 3…) que están en uso. La 1 cuenta solo si tiene un día escrito: en el Excel muchas
+   * traen "Sin actividad en el mes" sin fecha, y eso no es una visita. Las demás, con cualquier dato.
+   */
+  fechasUsadas() {
+    return NUMEROS_ACTIVIDAD.filter(n => (n === 1
+      ? this.diasDeFecha(1).length > 0
+      : COLUMNAS_POR_FECHA.some(c => !estaVacio(this.valor(columnaActividad(c, n))))));
+  }
+
+  /**
+   * Fechas que se muestran como pestañas, ordenadas por día: [1, 2…]. La 1 siempre está, porque
+   * guarda lo que trae la fila del Excel. Las que no tienen día escrito van al final.
+   */
+  fechasDelMes() {
+    const dia = n => this.diasDeFecha(n).map(excelAIso).filter(Boolean).sort()[0] ?? '9999';
+    return [...new Set([1, ...this.fechasUsadas()])].sort((a, b) => dia(a).localeCompare(dia(b)) || a - b);
+  }
+
+  /** En qué fecha (1, 2…) está escrito ese día, o undefined si en ninguna. */
+  buscarFecha(texto) {
+    return this.fechasUsadas().find(n => this.diasDeFecha(n).includes(texto));
+  }
+
+  /** Cuántos campos de una sección tienen dato en la fecha n. */
+  avanceSeccion(seccion, n = 1) {
+    const llenos = seccion.campos.filter(([col]) => !estaVacio(this.valor(Organizacion.columnaEnFecha(col, n)))).length;
     return { llenos, total: seccion.campos.length };
   }
 }

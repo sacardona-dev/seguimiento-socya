@@ -25,20 +25,36 @@ export const FECHAS = ['K', 'N', 'Q', 'T', 'W', 'Z', 'AD', 'AJ', 'AM', 'AQ'];
 // Columnas numéricas: solo aceptan números (participantes y duración en meses)
 export const NUMEROS = ['J', 'L', 'O', 'R', 'U', 'X', 'AA', 'AE', 'AK', 'AN', 'AR'];
 
-// Máximo de fechas de un mismo subgrupo en un mes. Se pidió de 2 a 4, pero el Excel ya tiene
+// Máximo de fechas (visitas) de una organización en un mes. Se pidió de 2 a 4, pero el Excel ya tiene
 // una organización con 5 (junio), así que se deja en 5 para no perder ese dato.
 export const MAX_ACTIVIDADES = 5;
+
+// Cada fecha del mes tiene su PROPIA información (pedido de la usuaria: "cada una debe contener su
+// información"). Solo estas columnas son de la organización y son iguales en todas las fechas:
+// datos del proyecto, resultados ICO y observaciones generales. Para cambiar cuáles, solo esta lista.
+export const COLUMNAS_DE_LA_ORGANIZACION = ['H', 'I', 'J', 'AG', 'AH', 'AI', 'AU'];
 
 // Secciones en el mismo orden y con los mismos nombres que los grupos del Excel.
 // Cada sección tiene subgrupos (ej. "1. Talleres…", "2. Comité técnico…") como en el encabezado del Excel.
 // Campo: [columna, etiqueta, ayuda opcional]. Grupo sin nombre (null) = la sección no tiene subgrupos.
-const seccion = (id, nombre, grupos) => ({
-  id, nombre, grupos,
-  campos: grupos.flatMap(g => g.campos), // lista plana, para contar avance y exportar
+const seccion = (id, nombre, grupos) => {
+  // Cada subgrupo sabe de qué sección es (las pestañas de fechas lo muestran) y tiene una clave única,
+  // porque hay nombres repetidos ("2. Comité técnico…" está en B y en C).
+  grupos.forEach((g, i) => Object.assign(g, { clave: `${id}-${i}`, seccion: nombre }));
+  return {
+    id, nombre, grupos,
+    campos: grupos.flatMap(g => g.campos), // lista plana, para contar avance y exportar
+  };
+};
+// En el Excel, si la organización tiene varias fechas, su fila se parte en sub-filas, una por fecha.
+// Lo de la fecha 1 va en la columna del Excel ("Z"); lo de las fechas 2, 3… en "Z_2", "Z_3"… (utils/columnas.js).
+// colFecha: la columna de fecha del subgrupo (si tiene). comun: es igual para todas las fechas.
+const grupo = (nombre, campos) => ({
+  nombre,
+  campos,
+  colFecha: campos.find(([c]) => FECHAS.includes(c))?.[0] ?? null,
+  comun: campos.every(([c]) => COLUMNAS_DE_LA_ORGANIZACION.includes(c)),
 });
-// Un subgrupo con fecha puede repetirse en el mes: en el Excel la fila de la organización se parte
-// en sub-filas, una por fecha. Las fechas 2, 3… se guardan en "Z_2", "Z_3"… (utils/columnas.js).
-const grupo = (nombre, campos) => ({ nombre, campos, repetible: campos.some(([c]) => FECHAS.includes(c)) });
 
 export const SECCIONES = [
   seccion('A', 'A. Escuela de desarrollo comunitario', [
@@ -135,8 +151,12 @@ export const SECCIONES = [
   ]),
 ];
 
-// Subgrupos que pueden tener varias fechas en el mes (todos los que tienen una columna de fecha)
-export const GRUPOS_REPETIBLES = SECCIONES.flatMap(s => s.grupos).filter(g => g.repetible);
+// Subgrupos con columna de fecha (de ahí sale el día que se ve en cada pestaña)
+export const GRUPOS_CON_FECHA = SECCIONES.flatMap(s => s.grupos).filter(g => g.colFecha);
+
+// Columnas que cada fecha guarda por separado (todas las de las secciones, menos las de la organización)
+export const COLUMNAS_POR_FECHA = SECCIONES.flatMap(s => s.campos.map(([c]) => c))
+  .filter(c => !COLUMNAS_DE_LA_ORGANIZACION.includes(c));
 
 // Columnas que se copian al abrir un mes nuevo (en los datos reales se repiten de un mes a otro
 // en más del 85 % de los casos): organización, módulo de escuela, proyecto y resultados ICO.

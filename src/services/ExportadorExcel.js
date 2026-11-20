@@ -1,9 +1,9 @@
-import { ANCHO_HOJA, ETIQUETAS_EXCEL_FIJAS, GRUPOS_REPETIBLES, SECCIONES } from '../config/esquemaExcel';
+import { ANCHO_HOJA, COLUMNAS_POR_FECHA, ETIQUETAS_EXCEL_FIJAS, SECCIONES } from '../config/esquemaExcel';
 import { columnaActividad, indiceColumna } from '../utils/columnas';
 import { normalizar } from '../utils/texto';
 
-// Columnas de los subgrupos que pueden tener varias fechas (van en sub-filas)
-const COLUMNAS_REPETIBLES = new Set(GRUPOS_REPETIBLES.flatMap(g => g.campos.map(([c]) => c)));
+// Columnas que cada fecha guarda por separado (van en sub-filas, una por fecha)
+const COLUMNAS_REPETIBLES = new Set(COLUMNAS_POR_FECHA);
 
 /**
  * Genera un Excel con las columnas que maneja la app, en su misma posición.
@@ -68,18 +68,17 @@ export class ExportadorExcel {
   }
 
   /**
-   * Filas de una organización: la primera con todos sus datos y, si algún subgrupo tiene varias
-   * fechas, una sub-fila más por cada fecha extra (solo con las columnas de ese subgrupo).
+   * Filas de una organización: una sub-fila por fecha (ordenadas por día) con la información de esa
+   * fecha. Los datos de la organización van una sola vez, en la primera (luego se combinan a lo alto).
    */
   static #bloqueOrganizacion(org, columnas) {
-    const porGrupo = GRUPOS_REPETIBLES.map(g => ({ g, fechas: org.actividades(g) }));
-    const alto = Math.max(1, ...porGrupo.map(x => x.fechas.length));
-    const bloque = Array.from({ length: alto }, () => ExportadorExcel.#filaVacia());
-
-    columnas.filter(c => !COLUMNAS_REPETIBLES.has(c)).forEach(c => { bloque[0][indiceColumna(c)] = org.valor(c); });
-    porGrupo.forEach(({ g, fechas }) => fechas.forEach((n, i) => g.campos.forEach(([c]) => {
-      bloque[i][indiceColumna(c)] = org.valor(columnaActividad(c, n));
-    })));
+    const fechas = org.fechasDelMes();
+    const bloque = fechas.map(() => ExportadorExcel.#filaVacia());
+    columnas.forEach(c => {
+      const i = indiceColumna(c);
+      if (COLUMNAS_REPETIBLES.has(c)) fechas.forEach((n, k) => { bloque[k][i] = org.valor(columnaActividad(c, n)); });
+      else bloque[0][i] = org.valor(c);
+    });
     return bloque;
   }
 

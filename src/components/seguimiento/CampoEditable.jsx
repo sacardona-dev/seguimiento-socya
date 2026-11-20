@@ -2,9 +2,9 @@ import { useEffect, useId, useState } from 'react';
 import { AREAS, FECHAS, NUMEROS, OPCIONES } from '../../config/esquemaExcel';
 import { excelAIso, isoAExcel } from '../../utils/fechas';
 
+// Solo se marca lo que vino del informe en PDF. "Manual" se quitó a pedido de la usuaria.
 const ETIQUETA_ORIGEN = {
   pdf: <span className="etiqueta etiqueta--exito">Del informe</span>,
-  manual: <span className="etiqueta">Manual</span>,
 };
 
 /**

@@ -13,6 +13,16 @@ export function excelAIso(texto) {
   return existe ? `${a}-${String(mes).padStart(2, '0')}-${String(d).padStart(2, '0')}` : '';
 }
 
+const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+/** '20/10/2026' -> '20 oct'. Vacía -> 'Sin fecha'. Mal escrita ('13/082026') -> tal como viene. */
+export function diaCorto(texto) {
+  const limpio = String(texto ?? '').trim();
+  if (!limpio) return 'Sin fecha';
+  const m = limpio.match(/^(\d{1,2})\/(\d{1,2})\/\d{4}$/);
+  return m && MESES_CORTOS[m[2] - 1] ? `${Number(m[1])} ${MESES_CORTOS[m[2] - 1]}` : limpio;
+}
+
 /** '2026-04-27' -> '27/04/2026'. Vacío si viene vacío. */
 export function isoAExcel(iso) {
   if (!iso) return '';

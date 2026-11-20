@@ -1,18 +1,14 @@
-import { DESTINO_INFORME, GRUPOS_REPETIBLES, MAX_ACTIVIDADES } from '../config/esquemaExcel';
-import { columnaActividad } from '../utils/columnas';
+import { DESTINO_INFORME, MAX_ACTIVIDADES } from '../config/esquemaExcel';
 import { excelAIso } from '../utils/fechas';
 
 /** Error con un mensaje pensado para mostrarle a la persona. */
 export class ErrorInforme extends Error {}
 
-// Subgrupo donde caen las actividades de los informes (el que tiene la columna de fecha de DESTINO_INFORME)
-const GRUPO_DESTINO = GRUPOS_REPETIBLES.find(g => g.campos.some(([c]) => c === DESTINO_INFORME.fecha[0]));
-const COL_FECHA = DESTINO_INFORME.fecha[0];
 const COL_OBSERVACIONES = DESTINO_INFORME.observaciones[0];
 
 /**
  * De 1 a 3 informes de visita de UNA organización en UN mes, que se suben juntos.
- * - Cada informe llena su propia fecha del subgrupo (informe del 20/10 → fecha 1, del 26/10 → fecha 2).
+ * - Cada informe llena su propia fecha de la organización (informe del 20/10 → fecha 1, del 26/10 → fecha 2).
  * - Las observaciones de todos se juntan en un solo texto, ordenado por fecha, que la persona
  *   revisa y corrige antes de guardar. Se juntan, no se reescriben: no se usa IA.
  */
@@ -56,13 +52,13 @@ export class LoteInformes {
 
   /**
    * Qué se guarda, sin guardar nada. Si ya hay una fecha igual a la del informe, se actualiza esa;
-   * si no, el informe ocupa la siguiente fecha libre del subgrupo.
+   * si no, el informe ocupa la siguiente fecha libre de la organización.
    * @returns {{ cambios: {col, etiqueta, val, nota?}[], no: string[] }}
    */
   planearCambios(organizacion) {
     const cambios = [...this.#informes[0].cambiosDeUbicacion(organizacion)];
     const no = [];
-    const usadas = organizacion.actividades(GRUPO_DESTINO);
+    const usadas = organizacion.fechasUsadas();
     const libres = Array.from({ length: MAX_ACTIVIDADES }, (_, i) => i + 1).filter(n => !usadas.includes(n));
     const porFecha = new Map(); // dos informes del mismo día van a la misma fecha
 
@@ -75,10 +71,10 @@ export class LoteInformes {
         no.push(`Hay dos informes del ${informe.fecha}: guardamos la fecha y participantes del primero (las observaciones de ambos van al resumen)`);
         return;
       }
-      const n = usadas.find(k => organizacion.valor(columnaActividad(COL_FECHA, k)) === informe.fecha) ?? libres.shift();
+      const n = organizacion.buscarFecha(informe.fecha) ?? libres.shift();
       porFecha.set(informe.fecha, n);
       if (!n) {
-        no.push(`Informe del ${informe.fecha}: ya hay ${MAX_ACTIVIDADES} fechas en "${GRUPO_DESTINO.nombre}"`);
+        no.push(`Informe del ${informe.fecha}: la organización ya tiene ${MAX_ACTIVIDADES} fechas en el mes`);
         return;
       }
       cambios.push(...informe.cambiosDeActividad(n).cambios);

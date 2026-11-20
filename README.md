@@ -53,7 +53,8 @@ Las reglas de organización, POO y leyes UX están en `CLAUDE.md`.
 - Solo se guardan campos que existen en el Excel. El resto del informe se ignora.
 - No se guardan celulares, cédulas, firmas ni fotos del informe.
 - Nada se guarda hasta que la persona confirma.
-- Cada dato indica si viene del informe ("Del informe") o se escribió a mano ("Manual").
+- Lo que viene del informe se marca con "Del informe".
+- Una organización puede tener varias fechas (visitas) en el mes, en pestañas arriba de su ficha. Cada fecha guarda su propia información; el proyecto, los resultados ICO y las observaciones son iguales en todas.
 
 ## Meses nuevos
 

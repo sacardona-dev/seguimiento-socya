@@ -12,7 +12,8 @@ Ver `README.md` para instalar, configurar Supabase y publicar.
 - Solo se guardan campos que existen en el Excel (`src/config/esquemaExcel.js`). El resto del informe se ignora.
 - No se guardan celulares, cédulas, firmas ni fotos.
 - Nada del PDF se guarda hasta que la persona confirma.
-- Cada dato guarda su origen: `pdf` ("Del informe") o `manual`.
+- Cada dato guarda su origen: `pdf` o `manual`. En pantalla solo se marca "Del informe"; la etiqueta
+  "Manual" se quitó a pedido de la usuaria.
 - "Descargar Excel" exporta SOLO lo que se ve en pantalla (todo el mes, una central, un municipio o una
   organización) del mes elegido. Decisión de la usuaria: es más fácil que bajar todas las filas.
   Puede cambiar si la organización lo pide; no cambiarlo por iniciativa propia. El botón NO va en la
@@ -27,19 +28,27 @@ Ver `README.md` para instalar, configurar Supabase y publicar.
   rango de fechas (últimos 30 días por defecto), persona y buscador; solo consulta (no deshace cambios).
   Varias personas editan el MISMO seguimiento: no hay uno por persona.
 - `supabase/autoria.sql` ("Editado por" en cada campo) sigue sin correrse; el historial lo reemplaza.
-- Varias fechas en un mes (pedido de la organización): todo subgrupo con columna de fecha es
-  `repetible` (esquemaExcel.js). La fecha 1 usa la columna del Excel (`Z`); las demás, `Z_2`… hasta
-  `MAX_ACTIVIDADES` = 5 (se pidió de 2 a 4, pero el Excel tiene un caso de 5 en junio). Así no se
-  cambió la tabla `registros`. En la ficha (`GrupoActividades`): una línea por fecha ("20/10/2026 · 7
-  participantes"), se abre con clic, solo una abierta a la vez; con una sola, viene abierta (elegido por
-  la usuaria: "muy extenso" si todas se ven abiertas). "＋ Agregar otra fecha" solo si las anteriores
-  tienen datos. "Quitar esta fecha" deja sus campos en blanco, con confirmación. El Excel descargado
-  vuelve a partir la fila en sub-filas con las demás columnas combinadas.
+- Varias fechas en un mes (pedido de la organización): cada fecha es una VISITA con su PROPIA
+  información completa (escuela, actividades, participantes, resúmenes…): la usuaria lo pidió así
+  ("ambas fechas llevarían información diferente"). Solo `COLUMNAS_DE_LA_ORGANIZACION` (proyecto H-J,
+  ICO AG-AI y observaciones AU) y los datos generales (A-E) son uno solo para todas las fechas; en la
+  ficha dicen "Igual para todas las fechas". La fecha 1 usa la columna del Excel (`Z`); las demás,
+  `Z_2`… hasta `MAX_ACTIVIDADES` = 5 (se pidió de 2 a 4, pero el Excel tiene un caso de 5 en junio).
+  Así no se cambió la tabla `registros`. Lo resuelve `Organizacion.columnaEnFecha(col, n)`.
+  En la ficha (`FechasDelMes`): PESTAÑAS arriba, debajo del nombre, ordenadas por día ("20 oct" + las
+  actividades con fecha). Al elegir una, TODOS los campos de abajo pasan a ser los de esa fecha, SIN
+  mover la pantalla (pedido de la usuaria). No hay cuadro aparte bajo las pestañas ni botones de fecha
+  dentro de las secciones (se probaron y se rechazaron: "demasiado enredado… por allá bien perdida").
+  "＋ Fecha" agrega una fecha en blanco; "Quitar esta fecha" deja en blanco todo lo de esa fecha, con
+  confirmación. La fecha 1 siempre es pestaña (guarda la fila del Excel); las demás, si tienen datos.
+  Para elegir dónde cae un informe, la fecha 1 cuenta como libre si no tiene día escrito (miles de filas
+  traen "Sin actividad en el mes" sin fecha). El Excel descargado parte la fila en una sub-fila por
+  fecha, con las columnas de la organización combinadas a lo alto.
 - Las sub-filas del Excel original (filas sin vigencia dentro de una organización combinada) se pasaron
   a `meses.json` como `Z_2`… (113 fechas, abril a octubre). Algunas fechas traen errores de digitación
   del Excel ("13/082026"); se dejaron igual y la app pide corregirlas.
 - Informes de visita: se suben de 1 a 3 a la vez (`LoteInformes`), de la MISMA organización y mes (si
-  no, error). Cada informe ocupa su propia fecha en el subgrupo destino (si ya existe esa fecha, la
+  no, error). Cada informe ocupa su propia fecha de la organización (si ya existe ese día, la
   actualiza). Las observaciones de todos se JUNTAN ordenadas por fecha en un cuadro editable antes de
   guardar (sin IA: se decidió empezar así; con IA haría falta servidor, costo y autorización de Socya).
 - Las 7 filas finales de cada hoja del Excel son listas de apoyo de los desplegables, no organizaciones.

@@ -127,6 +127,7 @@ export default function Panel() {
         )}
         {nav.nivel === 'organizacion' && organizacion && (
           <FichaOrganizacion
+            key={`${mes.clave}-${organizacion.id}`}
             mes={mes}
             organizacion={organizacion}
             onEditar={(col, valor) => editar(mes.clave, organizacion.id, col, valor)}
